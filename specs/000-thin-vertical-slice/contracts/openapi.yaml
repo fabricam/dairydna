@@ -1,0 +1,388 @@
+openapi: 3.0.3
+info:
+  title: DairyDNA Thin Vertical Slice API
+  version: dairydna.thin-slice.v1
+  description: >
+    Local demo Minimal API for generate → dashboard summary → optimize → inspect.
+    No authentication in feature 000. Implemented with ASP.NET Core Minimal APIs
+    (no MVC controllers).
+servers:
+  - url: http://localhost:8080
+    description: Local Aspire/API (port may vary)
+tags:
+  - name: Health
+  - name: Generation
+  - name: Demo
+  - name: Optimization
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Liveness/readiness
+      operationId: getHealth
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /api/generation-runs:
+    post:
+      tags: [Generation]
+      summary: Start thin-slice synthetic generation
+      operationId: createGenerationRun
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGenerationRunRequest"
+      responses:
+        "202":
+          description: Generation accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerationRunSummary"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+    get:
+      tags: [Generation]
+      summary: List generation runs
+      operationId: listGenerationRuns
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GenerationRunSummary"
+
+  /api/generation-runs/{id}:
+    get:
+      tags: [Generation]
+      summary: Get generation run
+      operationId: getGenerationRun
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerationRunDetail"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/demo/summary:
+    get:
+      tags: [Demo]
+      summary: Dashboard summary for planning date
+      operationId: getDemoSummary
+      parameters:
+        - name: generationId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: asOfDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DemoSummary"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/optimization-runs:
+    post:
+      tags: [Optimization]
+      summary: Run thin-slice allocation
+      operationId: createOptimizationRun
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOptimizationRunRequest"
+      responses:
+        "200":
+          description: Optimization completed (thin slice is synchronous)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OptimizationRunDetail"
+        "202":
+          description: Accepted for async completion (optional)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OptimizationRunSummary"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/optimization-runs/{id}:
+    get:
+      tags: [Optimization]
+      summary: Get optimization run with movements
+      operationId: getOptimizationRun
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OptimizationRunDetail"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    BadRequest:
+      description: Validation failed
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+    NotFound:
+      description: Not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+
+  schemas:
+    ProblemDetails:
+      type: object
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+
+    HealthStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [Healthy, Degraded, Unhealthy]
+
+    CreateGenerationRunRequest:
+      type: object
+      required: [scenarioName, randomSeed, startDate, endDate]
+      properties:
+        scenarioName:
+          type: string
+          example: thin-vertical-slice
+        schemaVersion:
+          type: string
+          default: dairydna.thin-slice.v1
+        randomSeed:
+          type: integer
+          example: 104729
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        farmCount: { type: integer, default: 5 }
+        facilityCount: { type: integer, default: 2 }
+        customerCount: { type: integer, default: 5 }
+        truckCount: { type: integer, default: 3 }
+
+    GenerationRunSummary:
+      type: object
+      required: [id, status, randomSeed, scenarioName]
+      properties:
+        id: { type: string, format: uuid }
+        scenarioName: { type: string }
+        randomSeed: { type: integer }
+        status:
+          type: string
+          enum: [Queued, Running, Completed, Failed]
+        planningDate: { type: string, format: date }
+        generatedAt: { type: string, format: date-time }
+
+    GenerationRunDetail:
+      allOf:
+        - $ref: "#/components/schemas/GenerationRunSummary"
+        - type: object
+          properties:
+            schemaVersion: { type: string }
+            configurationHash: { type: string }
+            entityCounts:
+              type: object
+              additionalProperties:
+                type: integer
+            failureMessage: { type: string, nullable: true }
+
+    DemoSummary:
+      type: object
+      required: [generationId, asOfDate, inventory, demand, prices, fleet]
+      properties:
+        generationId: { type: string, format: uuid }
+        asOfDate: { type: string, format: date }
+        dataClassification:
+          type: string
+          enum: [Synthetic]
+        inventory:
+          type: array
+          items:
+            $ref: "#/components/schemas/InventorySummaryRow"
+        demand:
+          type: array
+          items:
+            $ref: "#/components/schemas/DemandSummaryRow"
+        prices:
+          type: array
+          items:
+            $ref: "#/components/schemas/PriceSummaryRow"
+        fleet:
+          type: array
+          items:
+            $ref: "#/components/schemas/TruckSummaryRow"
+
+    InventorySummaryRow:
+      type: object
+      properties:
+        facilityId: { type: string, format: uuid }
+        facilityName: { type: string }
+        productCode: { type: string }
+        quantityPounds: { type: number }
+        oldestExpiresAt: { type: string, format: date-time }
+
+    DemandSummaryRow:
+      type: object
+      properties:
+        orderId: { type: string, format: uuid }
+        customerName: { type: string }
+        productCode: { type: string }
+        requestedQuantityPounds: { type: number }
+        offeredPricePerPound: { type: number }
+
+    PriceSummaryRow:
+      type: object
+      properties:
+        productCode: { type: string }
+        pricePerPound: { type: number }
+        priceType: { type: string }
+
+    TruckSummaryRow:
+      type: object
+      properties:
+        truckId: { type: string, format: uuid }
+        maximumCapacityPounds: { type: number }
+        status: { type: string }
+
+    CreateOptimizationRunRequest:
+      type: object
+      required: [generationId]
+      properties:
+        generationId: { type: string, format: uuid }
+        asOfDate:
+          type: string
+          format: date
+          description: Defaults to generation planningDate
+        optimizerVersion:
+          type: string
+          default: naive-cm-v1
+
+    OptimizationRunSummary:
+      type: object
+      required: [id, status]
+      properties:
+        id: { type: string, format: uuid }
+        generationId: { type: string, format: uuid }
+        asOfDate: { type: string, format: date }
+        status:
+          type: string
+          enum: [Queued, Running, Feasible, Infeasible, Failed]
+        objectiveValue: { type: number }
+        optimizerVersion: { type: string }
+        solveDurationMilliseconds: { type: integer }
+
+    OptimizationRunDetail:
+      allOf:
+        - $ref: "#/components/schemas/OptimizationRunSummary"
+        - type: object
+          properties:
+            movements:
+              type: array
+              items:
+                $ref: "#/components/schemas/RecommendedMovement"
+            unusedInventory:
+              type: array
+              items:
+                $ref: "#/components/schemas/UnusedInventoryRow"
+            unservedDemand:
+              type: array
+              items:
+                $ref: "#/components/schemas/UnservedDemandRow"
+
+    RecommendedMovement:
+      type: object
+      required:
+        - id
+        - originFacilityId
+        - destinationCustomerId
+        - productId
+        - quantityPounds
+        - truckId
+        - expectedRevenue
+        - transportationCost
+        - expectedContributionMargin
+      properties:
+        id: { type: string, format: uuid }
+        originFacilityId: { type: string, format: uuid }
+        destinationCustomerId: { type: string, format: uuid }
+        productId: { type: string, format: uuid }
+        quantityPounds: { type: number }
+        truckId: { type: string, format: uuid }
+        orderId: { type: string, format: uuid, nullable: true }
+        expectedUnitPrice: { type: number }
+        expectedRevenue: { type: number }
+        transportationCost: { type: number }
+        fuelCost: { type: number }
+        operatingCost: { type: number }
+        distanceMiles: { type: number }
+        expectedContributionMargin: { type: number, minimum: 0 }
+        explanation: { type: string }
+
+    UnusedInventoryRow:
+      type: object
+      properties:
+        facilityId: { type: string, format: uuid }
+        productCode: { type: string }
+        quantityPounds: { type: number }
+
+    UnservedDemandRow:
+      type: object
+      properties:
+        orderId: { type: string, format: uuid }
+        remainingQuantityPounds: { type: number }

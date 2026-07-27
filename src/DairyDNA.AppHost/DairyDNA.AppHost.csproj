@@ -1,0 +1,20 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.3.4">
+
+  <ItemGroup>
+    <ProjectReference Include="..\DairyDNA.Api\DairyDNA.Api.csproj" />
+    <ProjectReference Include="..\DairyDNA.Web\DairyDNA.Web.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.SqlServer" Version="13.4.6" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UserSecretsId>29a400b9-0b39-4fe7-a8a4-c9cb6ab7341a</UserSecretsId>
+  </PropertyGroup>
+
+</Project>

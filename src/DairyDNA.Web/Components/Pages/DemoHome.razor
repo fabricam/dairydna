@@ -1,0 +1,82 @@
+@page "/"
+@page "/demo"
+@rendermode InteractiveServer
+@inherits Fluxor.Blazor.Web.Components.FluxorComponent
+@inject IDispatcher Dispatcher
+@inject IState<GenerationState> GenerationState
+@inject IState<DemoState> DemoState
+@inject IState<OptimizationState> OptimizationState
+
+<PageTitle>DairyDNA Thin Slice</PageTitle>
+
+<div class="ui container" style="margin-top:2em;">
+    <h1 class="ui header">DairyDNA <div class="sub header">Thin vertical slice demo (synthetic data)</div></h1>
+
+    <div class="ui warning message">
+        Local-dev demonstration only. Unauthenticated. Not production-secure. Recommendations are not market advice.
+    </div>
+
+    <button type="button" class="ui primary button @(GenerationState.Value.Loading ? "loading" : null)"
+            disabled="@GenerationState.Value.Loading" @onclick="GenerateAsync">
+        @(GenerationState.Value.Loading ? "Generating..." : "Generate thin-slice data")
+    </button>
+
+    @if (GenerationState.Value.Error is not null)
+    {
+        <div class="ui negative message">@GenerationState.Value.Error</div>
+    }
+
+    @if (GenerationState.Value.GenerationId is Guid gid)
+    {
+        <div class="ui segment">
+            <p><strong>Generation:</strong> @gid</p>
+            <p><strong>Seed:</strong> @GenerationState.Value.RandomSeed · <strong>Schema:</strong> dairydna.thin-slice.v1 · <strong>Status:</strong> @GenerationState.Value.Status · <strong>Planning date:</strong> @GenerationState.Value.PlanningDate</p>
+            <button class="ui button" disabled="@DemoState.Value.Loading" @onclick="() => LoadSummary(gid)">Load demo summary</button>
+            <button class="ui teal button" disabled="@OptimizationState.Value.Loading" @onclick="() => Optimize(gid)">Run optimization</button>
+            <a class="ui button" href="/recommendations">View recommendations</a>
+        </div>
+    }
+
+    @if (DemoState.Value.Summary is { } summary)
+    {
+        <h2 class="ui header">Operational summary <div class="ui teal label">@summary.dataClassification</div></h2>
+        <div class="ui three cards">
+            <div class="card"><div class="content"><div class="header">Inventory rows</div><div class="description">@summary.inventory.Count</div></div></div>
+            <div class="card"><div class="content"><div class="header">Open demand</div><div class="description">@summary.demand.Count</div></div></div>
+            <div class="card"><div class="content"><div class="header">Fleet</div><div class="description">@summary.fleet.Count</div></div></div>
+        </div>
+
+        <h3 class="ui header">Inventory</h3>
+        <table class="ui celled table">
+            <thead><tr><th>Facility</th><th>Product</th><th>Qty (lb)</th><th>Oldest expiry</th></tr></thead>
+            <tbody>
+            @foreach (var row in summary.inventory)
+            {
+                <tr><td>@row.facilityName</td><td>@row.productCode</td><td>@row.quantityPounds</td><td>@row.oldestExpiresAt</td></tr>
+            }
+            </tbody>
+        </table>
+
+        <h3 class="ui header">Demand</h3>
+        <table class="ui celled table">
+            <thead><tr><th>Customer</th><th>Product</th><th>Qty</th><th>Price/lb</th></tr></thead>
+            <tbody>
+            @foreach (var row in summary.demand)
+            {
+                <tr><td>@row.customerName</td><td>@row.productCode</td><td>@row.requestedQuantityPounds</td><td>@row.offeredPricePerPound</td></tr>
+            }
+            </tbody>
+        </table>
+    }
+</div>
+
+@code {
+    private Task GenerateAsync()
+    {
+        Dispatcher.Dispatch(new GenerateThinSliceAction(104729));
+        return Task.CompletedTask;
+    }
+
+    private void LoadSummary(Guid id) => Dispatcher.Dispatch(new LoadDemoSummaryAction(id));
+    private void Optimize(Guid id) => Dispatcher.Dispatch(new RunOptimizationAction(id));
+}

@@ -1,0 +1,60 @@
+@page "/recommendations"
+@rendermode InteractiveServer
+@inherits Fluxor.Blazor.Web.Components.FluxorComponent
+@inject IState<OptimizationState> OptimizationState
+@inject IState<GenerationState> GenerationState
+
+<PageTitle>Recommendations</PageTitle>
+
+<div class="ui container" style="margin-top:2em;">
+    <h1 class="ui header">Optimization recommendations</h1>
+    <p>API resource: <code>OptimizationRun</code> (displayed as recommendations).</p>
+
+    @if (OptimizationState.Value.Loading)
+    {
+        <div class="ui active inline loader"></div>
+    }
+    else if (OptimizationState.Value.Error is not null)
+    {
+        <div class="ui negative message">@OptimizationState.Value.Error</div>
+    }
+    else if (OptimizationState.Value.Detail is { } detail)
+    {
+        <div class="ui segment">
+            <p><strong>Status:</strong> @detail.status</p>
+            <p><strong>Objective (contribution margin):</strong> @detail.objectiveValue</p>
+            <p><strong>Optimizer:</strong> @detail.optimizerVersion · <strong>Solve ms:</strong> @detail.solveDurationMilliseconds</p>
+            <p><strong>Generation seed:</strong> @GenerationState.Value.RandomSeed · <strong>Schema:</strong> dairydna.thin-slice.v1</p>
+        </div>
+
+        <table class="ui celled table">
+            <thead>
+            <tr>
+                <th>Qty (lb)</th>
+                <th>Revenue</th>
+                <th>Transport</th>
+                <th>Margin</th>
+                <th>Explanation / constraints</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var m in detail.movements)
+            {
+                <tr>
+                    <td>@m.quantityPounds</td>
+                    <td>@m.expectedRevenue</td>
+                    <td>@m.transportationCost</td>
+                    <td>@m.expectedContributionMargin</td>
+                    <td>@m.explanation</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="ui info message">Run optimization from the home page first.</div>
+    }
+
+    <a class="ui button" href="/">Back</a>
+</div>
