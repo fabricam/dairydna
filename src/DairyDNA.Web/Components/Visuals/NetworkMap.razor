@@ -1,0 +1,67 @@
+@namespace DairyDNA.Web.Components.Visuals
+
+@((MarkupString)SvgMarkup)
+<p class="dd-visual-alt">@TextAlternative</p>
+
+@code {
+    [Parameter] public IReadOnlyList<NetworkPointVm> Points { get; set; } = [];
+    [Parameter] public IReadOnlyList<NetworkFlowVm> Flows { get; set; } = [];
+    [Parameter] public string AriaLabel { get; set; } = "Network map of facilities and customers";
+    [Parameter] public string TextAlternative { get; set; } = string.Empty;
+    [Parameter] public int Width { get; set; } = 640;
+    [Parameter] public int Height { get; set; } = 360;
+
+    private string SvgMarkup { get; set; } = string.Empty;
+    private const double Pad = 36;
+
+    protected override void OnParametersSet()
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.Append($"<svg class=\"dd-network-map\" viewBox=\"0 0 {Width} {Height}\" role=\"img\" aria-label=\"{System.Net.WebUtility.HtmlEncode(AriaLabel)}\">");
+        sb.Append($"<title>{System.Net.WebUtility.HtmlEncode(AriaLabel)}</title>");
+        sb.Append($"<rect width=\"{Width}\" height=\"{Height}\" class=\"dd-map-bg\" />");
+
+        foreach (var flow in Flows)
+        {
+            var from = Points.FirstOrDefault(p => p.id == flow.originId);
+            var to = Points.FirstOrDefault(p => p.id == flow.destinationId);
+            if (from is null || to is null) continue;
+            var (x1, y1) = Project(from.latitude, from.longitude);
+            var (x2, y2) = Project(to.latitude, to.longitude);
+            sb.Append($"<line x1=\"{x1:0.##}\" y1=\"{y1:0.##}\" x2=\"{x2:0.##}\" y2=\"{y2:0.##}\" class=\"dd-map-arc\" />");
+        }
+
+        foreach (var point in Points)
+        {
+            var (x, y) = Project(point.latitude, point.longitude);
+            var css = point.kind.Equals("Facility", StringComparison.OrdinalIgnoreCase) ? "dd-map-facility" : "dd-map-customer";
+            var title = System.Net.WebUtility.HtmlEncode($"{point.kind}: {point.name}");
+            var label = System.Net.WebUtility.HtmlEncode(ShortName(point.name));
+            sb.Append($"<circle cx=\"{x:0.##}\" cy=\"{y:0.##}\" r=\"7\" class=\"{css}\"><title>{title}</title></circle>");
+            sb.Append($"<text x=\"{x + 10:0.##}\" y=\"{y + 4:0.##}\" class=\"dd-map-label\">{label}</text>");
+        }
+
+        sb.Append("</svg>");
+        SvgMarkup = sb.ToString();
+    }
+
+    private (double x, double y) Project(decimal lat, decimal lon)
+    {
+        if (Points.Count == 0) return (Width / 2.0, Height / 2.0);
+        var minLat = Points.Min(p => p.latitude);
+        var maxLat = Points.Max(p => p.latitude);
+        var minLon = Points.Min(p => p.longitude);
+        var maxLon = Points.Max(p => p.longitude);
+        var dLat = Math.Max(0.01m, maxLat - minLat);
+        var dLon = Math.Max(0.01m, maxLon - minLon);
+        var x = Pad + (double)((lon - minLon) / dLon) * (Width - 2 * Pad);
+        var y = Pad + (1.0 - (double)((lat - minLat) / dLat)) * (Height - 2 * Pad);
+        return (x, y);
+    }
+
+    private static string ShortName(string name) =>
+        name.Length <= 14 ? name : name[..12] + "…";
+
+    public sealed record NetworkPointVm(Guid id, string kind, string name, decimal latitude, decimal longitude);
+    public sealed record NetworkFlowVm(Guid originId, Guid destinationId);
+}

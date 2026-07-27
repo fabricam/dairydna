@@ -24,6 +24,13 @@ Manual pass of quickstart scenarios (2026-07-26) against local implementation.
 | Demo home useful content | ≤ 2s | Sub-second after generate |
 | Optimize | ≤ 30s | Typically &lt; 1s on thin-slice day slice |
 
-## Security posture (000)
+## Visual polish (FR-006a, 2026-07-26)
 
-Local-dev only. No authentication. Do not expose as internet-facing production.
+| Visual | Location | Notes |
+|--------|----------|-------|
+| Network map (schematic lat/lon scatter) | Demo home after Load summary | Facilities + customers; Synthetic label |
+| Recommended flow arcs | Recommendations | Overlaid on same schematic map |
+| Margin/cost grouped bars | Recommendations | Revenue / transport / margin per movement + table alt text |
+
+Restart Aspire after pull so Web picks up UI changes.
+

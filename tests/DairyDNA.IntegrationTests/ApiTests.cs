@@ -59,18 +59,23 @@ public class ThinSliceHappyPathTests : IClassFixture<DairyDnaApiFactory>
         summary.Should().NotBeNull();
         summary!.inventory.Should().NotBeEmpty();
         summary.demand.Should().NotBeEmpty();
+        summary.network.Should().NotBeEmpty();
+        summary.network.Should().Contain(p => p.kind == "Facility");
+        summary.network.Should().Contain(p => p.kind == "Customer");
 
         var optResponse = await _client.PostAsJsonAsync("/api/optimization-runs", new { generationId = gen.id });
         optResponse.EnsureSuccessStatusCode();
         var opt = await optResponse.Content.ReadFromJsonAsync<OptDto>();
         opt.Should().NotBeNull();
         opt!.status.Should().BeOneOf("Feasible", "Infeasible");
+        opt.network.Should().NotBeEmpty();
         if (opt.movements is { Count: > 0 })
             opt.movements.Should().OnlyContain(m => m.expectedContributionMargin >= 0);
     }
 
     private sealed record GenDto(Guid id, string status);
-    private sealed record DemoDto(List<object> inventory, List<object> demand);
-    private sealed record OptDto(string status, decimal objectiveValue, List<MoveDto> movements);
+    private sealed record DemoDto(List<object> inventory, List<object> demand, List<NetDto> network);
+    private sealed record NetDto(string kind, decimal latitude, decimal longitude);
+    private sealed record OptDto(string status, decimal objectiveValue, List<MoveDto> movements, List<NetDto> network);
     private sealed record MoveDto(decimal quantityPounds, decimal expectedContributionMargin, decimal transportationCost);
 }

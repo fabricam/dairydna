@@ -1,0 +1,67 @@
+@namespace DairyDNA.Web.Components.Visuals
+
+@((MarkupString)SvgMarkup)
+<p class="dd-visual-alt">@TextAlternative</p>
+
+@code {
+    [Parameter] public IReadOnlyList<MarginBarVm> Bars { get; set; } = [];
+    [Parameter] public string AriaLabel { get; set; } = "Contribution margin and cost breakdown chart";
+    [Parameter] public string TextAlternative { get; set; } = string.Empty;
+    [Parameter] public int Width { get; set; } = 640;
+    [Parameter] public int Height { get; set; } = 280;
+
+    private string SvgMarkup { get; set; } = string.Empty;
+    private const double Pad = 40;
+    private const double Top = 36;
+    private const double Bottom = 36;
+
+    protected override void OnParametersSet()
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.Append($"<svg class=\"dd-margin-chart\" viewBox=\"0 0 {Width} {Height}\" role=\"img\" aria-label=\"{System.Net.WebUtility.HtmlEncode(AriaLabel)}\">");
+        sb.Append($"<title>{System.Net.WebUtility.HtmlEncode(AriaLabel)}</title>");
+        sb.Append($"<rect width=\"{Width}\" height=\"{Height}\" class=\"dd-chart-bg\" />");
+
+        if (Bars.Count == 0)
+        {
+            sb.Append($"<text x=\"{Width / 2}\" y=\"{Height / 2}\" text-anchor=\"middle\" class=\"dd-chart-empty\">No movements</text>");
+        }
+        else
+        {
+            var max = Math.Max(1m, Bars.Max(b => Math.Max(b.revenue, Math.Max(b.transport, b.margin))));
+            var groupWidth = (Width - 2 * Pad) / (double)Bars.Count;
+            var plotH = Height - Top - Bottom;
+
+            for (var i = 0; i < Bars.Count; i++)
+            {
+                var bar = Bars[i];
+                var baseX = Pad + i * groupWidth;
+                var slot = groupWidth / 4.0;
+
+                AppendBar(sb, baseX + slot * 0.5, bar.revenue, max, plotH, slot, "dd-bar-revenue", $"Movement {i + 1} revenue {bar.revenue}");
+                AppendBar(sb, baseX + slot * 1.5, bar.transport, max, plotH, slot, "dd-bar-transport", $"Movement {i + 1} transport {bar.transport}");
+                AppendBar(sb, baseX + slot * 2.5, bar.margin, max, plotH, slot, "dd-bar-margin", $"Movement {i + 1} margin {bar.margin}");
+                sb.Append($"<text x=\"{baseX + groupWidth / 2:0.##}\" y=\"{Height - 10}\" text-anchor=\"middle\" class=\"dd-chart-label\">M{i + 1}</text>");
+            }
+
+            sb.Append($"<text x=\"{Pad}\" y=\"18\" class=\"dd-chart-legend\">Revenue</text>");
+            sb.Append($"<rect x=\"{Pad + 58}\" y=\"8\" width=\"12\" height=\"12\" class=\"dd-bar-revenue\" />");
+            sb.Append($"<text x=\"{Pad + 90}\" y=\"18\" class=\"dd-chart-legend\">Transport</text>");
+            sb.Append($"<rect x=\"{Pad + 158}\" y=\"8\" width=\"12\" height=\"12\" class=\"dd-bar-transport\" />");
+            sb.Append($"<text x=\"{Pad + 190}\" y=\"18\" class=\"dd-chart-legend\">Margin</text>");
+            sb.Append($"<rect x=\"{Pad + 242}\" y=\"8\" width=\"12\" height=\"12\" class=\"dd-bar-margin\" />");
+        }
+
+        sb.Append("</svg>");
+        SvgMarkup = sb.ToString();
+    }
+
+    private void AppendBar(System.Text.StringBuilder sb, double x, decimal value, decimal max, double plotH, double slot, string css, string title)
+    {
+        var h = (double)(value / max) * plotH;
+        var y = Height - Bottom - h;
+        sb.Append($"<rect x=\"{x:0.##}\" y=\"{y:0.##}\" width=\"{slot * 0.9:0.##}\" height=\"{h:0.##}\" class=\"{css}\"><title>{System.Net.WebUtility.HtmlEncode(title)}</title></rect>");
+    }
+
+    public sealed record MarginBarVm(decimal revenue, decimal transport, decimal margin);
+}

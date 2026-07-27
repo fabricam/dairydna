@@ -2,6 +2,7 @@
 @page "/demo"
 @rendermode InteractiveServer
 @inherits Fluxor.Blazor.Web.Components.FluxorComponent
+@using DairyDNA.Web.Components.Visuals
 @inject IDispatcher Dispatcher
 @inject IState<GenerationState> GenerationState
 @inject IState<DemoState> DemoState
@@ -46,6 +47,17 @@
             <div class="card"><div class="content"><div class="header">Fleet</div><div class="description">@summary.fleet.Count</div></div></div>
         </div>
 
+        <h3 class="ui header">Network map <div class="ui teal label">@summary.dataClassification</div></h3>
+        <div class="ui segment dd-visual-panel">
+            <NetworkMap Points="ToMapPoints(summary.network)"
+                        AriaLabel="Schematic network map of facilities and customers"
+                        TextAlternative="@NetworkAltText(summary.network)" />
+            <div class="dd-map-legend">
+                <span class="dd-legend-facility">■ Facility</span>
+                <span class="dd-legend-customer">■ Customer</span>
+            </div>
+        </div>
+
         <h3 class="ui header">Inventory</h3>
         <table class="ui celled table">
             <thead><tr><th>Facility</th><th>Product</th><th>Qty (lb)</th><th>Oldest expiry</th></tr></thead>
@@ -79,4 +91,14 @@
 
     private void LoadSummary(Guid id) => Dispatcher.Dispatch(new LoadDemoSummaryAction(id));
     private void Optimize(Guid id) => Dispatcher.Dispatch(new RunOptimizationAction(id));
+
+    private static List<NetworkMap.NetworkPointVm> ToMapPoints(List<NetworkPointDto> network) =>
+        network.Select(p => new NetworkMap.NetworkPointVm(p.id, p.kind, p.name, p.latitude, p.longitude)).ToList();
+
+    private static string NetworkAltText(List<NetworkPointDto> network)
+    {
+        var facilities = network.Count(p => p.kind.Equals("Facility", StringComparison.OrdinalIgnoreCase));
+        var customers = network.Count(p => p.kind.Equals("Customer", StringComparison.OrdinalIgnoreCase));
+        return $"Network map shows {facilities} facilities and {customers} customers plotted by latitude and longitude (schematic, synthetic data).";
+    }
 }

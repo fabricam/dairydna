@@ -1,4 +1,5 @@
 using Fluxor;
+using DairyDNA.Web.Store.Shared;
 
 namespace DairyDNA.Web.Store.Optimization;
 
@@ -22,6 +23,7 @@ public sealed record OptimizationDetailDto(
     decimal objectiveValue,
     string optimizerVersion,
     int solveDurationMilliseconds,
+    List<NetworkPointDto>? network,
     List<MovementDto> movements);
 
 public sealed record MovementDto(

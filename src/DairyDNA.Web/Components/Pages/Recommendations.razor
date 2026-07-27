@@ -1,6 +1,7 @@
 @page "/recommendations"
 @rendermode InteractiveServer
 @inherits Fluxor.Blazor.Web.Components.FluxorComponent
+@using DairyDNA.Web.Components.Visuals
 @inject IState<OptimizationState> OptimizationState
 @inject IState<GenerationState> GenerationState
 
@@ -25,11 +26,33 @@
             <p><strong>Objective (contribution margin):</strong> @detail.objectiveValue</p>
             <p><strong>Optimizer:</strong> @detail.optimizerVersion · <strong>Solve ms:</strong> @detail.solveDurationMilliseconds</p>
             <p><strong>Generation seed:</strong> @GenerationState.Value.RandomSeed · <strong>Schema:</strong> dairydna.thin-slice.v1</p>
+            <div class="ui teal label">Recommendation</div>
+        </div>
+
+        <h3 class="ui header">Recommended flows map</h3>
+        <div class="ui segment dd-visual-panel">
+            <NetworkMap Points="ToMapPoints(detail.network)"
+                        Flows="ToFlows(detail.movements)"
+                        AriaLabel="Network map with recommended movement arcs"
+                        TextAlternative="@FlowAltText(detail)" />
+            <div class="dd-map-legend">
+                <span class="dd-legend-facility">■ Facility</span>
+                <span class="dd-legend-customer">■ Customer</span>
+                <span class="dd-legend-arc">— Recommended lane</span>
+            </div>
+        </div>
+
+        <h3 class="ui header">Margin and cost breakdown</h3>
+        <div class="ui segment dd-visual-panel">
+            <MarginCostChart Bars="ToBars(detail.movements)"
+                             AriaLabel="Grouped bars of revenue, transport cost, and contribution margin per movement"
+                             TextAlternative="@ChartAltText(detail.movements)" />
         </div>
 
         <table class="ui celled table">
             <thead>
             <tr>
+                <th>#</th>
                 <th>Qty (lb)</th>
                 <th>Revenue</th>
                 <th>Transport</th>
@@ -38,9 +61,14 @@
             </tr>
             </thead>
             <tbody>
+            @{
+                var i = 0;
+            }
             @foreach (var m in detail.movements)
             {
+                i++;
                 <tr>
+                    <td>M@i</td>
                     <td>@m.quantityPounds</td>
                     <td>@m.expectedRevenue</td>
                     <td>@m.transportationCost</td>
@@ -58,3 +86,29 @@
 
     <a class="ui button" href="/">Back</a>
 </div>
+
+@code {
+    private static List<NetworkMap.NetworkPointVm> ToMapPoints(List<NetworkPointDto> network) =>
+        (network ?? []).Select(p => new NetworkMap.NetworkPointVm(p.id, p.kind, p.name, p.latitude, p.longitude)).ToList();
+
+    private static List<NetworkMap.NetworkFlowVm> ToFlows(List<MovementDto> movements) =>
+        movements.Select(m => new NetworkMap.NetworkFlowVm(m.originFacilityId, m.destinationCustomerId)).ToList();
+
+    private static List<MarginCostChart.MarginBarVm> ToBars(List<MovementDto> movements) =>
+        movements.Select(m => new MarginCostChart.MarginBarVm(m.expectedRevenue, m.transportationCost, m.expectedContributionMargin)).ToList();
+
+    private static string FlowAltText(OptimizationDetailDto detail)
+    {
+        var n = detail.network?.Count ?? 0;
+        var m = detail.movements.Count;
+        return $"Map of {n} network points with {m} recommended movement arcs. Synthetic recommendation data.";
+    }
+
+    private static string ChartAltText(List<MovementDto> movements)
+    {
+        if (movements.Count == 0) return "No recommended movements; chart is empty.";
+        var parts = movements.Select((m, idx) =>
+            $"M{idx + 1}: revenue {m.expectedRevenue:0.00}, transport {m.transportationCost:0.00}, margin {m.expectedContributionMargin:0.00}");
+        return "Margin and cost chart. " + string.Join("; ", parts) + ".";
+    }
+}

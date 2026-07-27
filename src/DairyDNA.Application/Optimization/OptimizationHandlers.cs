@@ -103,11 +103,17 @@ public sealed class GetOptimizationRunHandler
 
     public GetOptimizationRunHandler(IDairyDnaDbContext db) => _db = db;
 
-    public async Task<(OptimizationRun Run, List<RecommendedMovement> Movements)?> HandleAsync(Guid id, CancellationToken ct = default)
+    public async Task<(OptimizationRun Run, List<RecommendedMovement> Movements, List<Demo.NetworkMapPoint> Network)?> HandleAsync(Guid id, CancellationToken ct = default)
     {
         var run = await _db.OptimizationRuns.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (run is null) return null;
         var movements = await _db.RecommendedMovements.Where(x => x.OptimizationRunId == id).ToListAsync(ct);
-        return (run, movements);
+        var facilities = await _db.Facilities.Where(x => x.GenerationId == run.GenerationId).ToListAsync(ct);
+        var customers = await _db.Customers.Where(x => x.GenerationId == run.GenerationId).ToListAsync(ct);
+        var network = facilities
+            .Select(f => new Demo.NetworkMapPoint(f.Id, "Facility", f.Name, f.Latitude, f.Longitude))
+            .Concat(customers.Select(c => new Demo.NetworkMapPoint(c.Id, "Customer", c.Name, c.Latitude, c.Longitude)))
+            .ToList();
+        return (run, movements, network);
     }
 }

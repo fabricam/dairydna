@@ -8,6 +8,7 @@ public sealed record InventorySummaryRow(Guid FacilityId, string FacilityName, s
 public sealed record DemandSummaryRow(Guid OrderId, string CustomerName, string ProductCode, decimal RequestedQuantityPounds, decimal OfferedPricePerPound);
 public sealed record PriceSummaryRow(string ProductCode, decimal PricePerPound, string PriceType);
 public sealed record TruckSummaryRow(Guid TruckId, decimal MaximumCapacityPounds, string Status);
+public sealed record NetworkMapPoint(Guid Id, string Kind, string Name, decimal Latitude, decimal Longitude);
 
 public sealed record DemoSummary(
     Guid GenerationId,
@@ -16,7 +17,8 @@ public sealed record DemoSummary(
     IReadOnlyList<InventorySummaryRow> Inventory,
     IReadOnlyList<DemandSummaryRow> Demand,
     IReadOnlyList<PriceSummaryRow> Prices,
-    IReadOnlyList<TruckSummaryRow> Fleet);
+    IReadOnlyList<TruckSummaryRow> Fleet,
+    IReadOnlyList<NetworkMapPoint> Network);
 
 public sealed class GetDemoSummaryHandler
 {
@@ -66,6 +68,11 @@ public sealed class GetDemoSummaryHandler
         var trucks = await _db.Trucks.Where(x => x.GenerationId == generationId).ToListAsync(ct);
         var fleet = trucks.Select(t => new TruckSummaryRow(t.Id, t.MaximumCapacityPounds, t.Status.ToString())).ToList();
 
-        return new DemoSummary(generationId, day, "Synthetic", inventory, demand, priceRows, fleet);
+        var network = facilities
+            .Select(f => new NetworkMapPoint(f.Id, "Facility", f.Name, f.Latitude, f.Longitude))
+            .Concat(customers.Values.Select(c => new NetworkMapPoint(c.Id, "Customer", c.Name, c.Latitude, c.Longitude)))
+            .ToList();
+
+        return new DemoSummary(generationId, day, "Synthetic", inventory, demand, priceRows, fleet, network);
     }
 }

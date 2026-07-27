@@ -36,3 +36,74 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+.dd-visual-panel {
+    background: linear-gradient(180deg, #f7fafc 0%, #eef3f7 100%);
+    overflow-x: auto;
+}
+
+.dd-network-map,
+.dd-margin-chart {
+    width: 100%;
+    max-width: 720px;
+    height: auto;
+    display: block;
+}
+
+.dd-map-bg,
+.dd-chart-bg {
+    fill: #f4f7fa;
+    stroke: #c5d0db;
+    stroke-width: 1;
+}
+
+.dd-map-facility {
+    fill: #1f4e79;
+    stroke: #0d2b45;
+    stroke-width: 1;
+}
+
+.dd-map-customer {
+    fill: #2a9d8f;
+    stroke: #1b6b61;
+    stroke-width: 1;
+}
+
+.dd-map-arc {
+    stroke: #e76f51;
+    stroke-width: 2.5;
+    stroke-dasharray: 6 4;
+    fill: none;
+    opacity: 0.85;
+}
+
+.dd-map-label,
+.dd-chart-label,
+.dd-chart-legend,
+.dd-chart-empty {
+    fill: #243447;
+    font-size: 11px;
+    font-family: "Segoe UI", Tahoma, sans-serif;
+}
+
+.dd-bar-revenue { fill: #1f4e79; }
+.dd-bar-transport { fill: #e9c46a; }
+.dd-bar-margin { fill: #2a9d8f; }
+
+.dd-visual-alt {
+    margin-top: 0.75rem;
+    color: #4a5b6b;
+    font-size: 0.9rem;
+}
+
+.dd-map-legend {
+    margin-top: 0.5rem;
+    display: flex;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    font-size: 0.9rem;
+}
+
+.dd-legend-facility { color: #1f4e79; font-weight: 600; }
+.dd-legend-customer { color: #2a9d8f; font-weight: 600; }
+.dd-legend-arc { color: #e76f51; font-weight: 600; }

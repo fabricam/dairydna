@@ -1,4 +1,5 @@
 using System.Text.Json;
+using DairyDNA.Application.Demo;
 using DairyDNA.Application.Optimization;
 using DairyDNA.Domain.Entities;
 
@@ -19,17 +20,19 @@ public static class OptimizationEndpoints
             logger.LogInformation("Optimization completed in {ElapsedMs}ms id={Id} status={Status} objective={Objective}",
                 sw.ElapsedMilliseconds, run.Id, run.Status, run.ObjectiveValue);
             var detail = await getHandler.HandleAsync(run.Id, ct);
-            return Results.Ok(ToDetail(detail!.Value.Run, detail.Value.Movements));
+            return Results.Ok(ToDetail(detail!.Value.Run, detail.Value.Movements, detail.Value.Network));
         });
         group.MapGet("/{id:guid}", async (Guid id, GetOptimizationRunHandler handler, CancellationToken ct) =>
         {
             var detail = await handler.HandleAsync(id, ct);
-            return detail is null ? Results.NotFound() : Results.Ok(ToDetail(detail.Value.Run, detail.Value.Movements));
+            return detail is null
+                ? Results.NotFound()
+                : Results.Ok(ToDetail(detail.Value.Run, detail.Value.Movements, detail.Value.Network));
         });
         return group;
     }
 
-    private static object ToDetail(OptimizationRun run, List<RecommendedMovement> movements) => new
+    private static object ToDetail(OptimizationRun run, List<RecommendedMovement> movements, List<NetworkMapPoint> network) => new
     {
         id = run.Id,
         generationId = run.GenerationId,
@@ -39,6 +42,8 @@ public static class OptimizationEndpoints
         optimizerVersion = run.OptimizerVersion,
         solveDurationMilliseconds = run.SolveDurationMilliseconds,
         datasetSchemaVersion = run.DatasetSchemaVersion,
+        dataClassification = "Recommendation",
+        network,
         movements = movements.Select(m => new
         {
             id = m.Id,

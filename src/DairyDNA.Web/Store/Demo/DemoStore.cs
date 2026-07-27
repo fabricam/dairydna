@@ -1,4 +1,5 @@
 using Fluxor;
+using DairyDNA.Web.Store.Shared;
 
 namespace DairyDNA.Web.Store.Demo;
 
@@ -21,7 +22,8 @@ public sealed record DemoSummaryDto(
     List<InventoryRow> inventory,
     List<DemandRow> demand,
     List<PriceRow> prices,
-    List<TruckRow> fleet);
+    List<TruckRow> fleet,
+    List<NetworkPointDto> network);
 
 public sealed record InventoryRow(Guid facilityId, string facilityName, string productCode, decimal quantityPounds, DateTimeOffset? oldestExpiresAt);
 public sealed record DemandRow(Guid orderId, string customerName, string productCode, decimal requestedQuantityPounds, decimal offeredPricePerPound);

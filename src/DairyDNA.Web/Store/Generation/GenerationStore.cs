@@ -1,4 +1,5 @@
 using Fluxor;
+using DairyDNA.Web.Store.Demo;
 
 namespace DairyDNA.Web.Store.Generation;
 
@@ -60,6 +61,7 @@ public sealed class GenerationEffects
             var payload = await response.Content.ReadFromJsonAsync<GenerationDto>();
             if (payload is null) throw new InvalidOperationException("Empty generation response");
             dispatcher.Dispatch(new GenerationSucceededAction(payload.id, payload.status, DateOnly.Parse(payload.planningDate!), payload.randomSeed));
+            dispatcher.Dispatch(new LoadDemoSummaryAction(payload.id));
         }
         catch (Exception ex)
         {

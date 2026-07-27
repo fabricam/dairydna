@@ -138,6 +138,14 @@ Paths follow `src/` and `tests/` at repository root per plan.md.
 - [X] T060 Run full `dotnet test DairyDNA.sln` and fix failures
 - [X] T061 Manual pass of quickstart Scenarios A–D; record results and wall-clock timings for demo home load and optimize vs plan budgets (≤2s useful content, ≤30s optimize) in `docs/architecture/demo-000-notes.md`
 
+## Phase 6: Visual polish (FR-006a follow-up)
+
+**Purpose**: Close post-MVP visual-aid amendment (network map + margin/cost chart)
+
+- [X] T062 Extend demo summary + optimization detail APIs with `network` map points (facility/customer lat/lon)
+- [X] T063 Add schematic network map on `DemoHome.razor` and recommended-flow arcs on `Recommendations.razor`
+- [X] T064 Add margin/cost breakdown chart on recommendations; update OpenAPI + integration assertions; document in demo notes
+
 ---
 
 ## Dependencies & Execution Order
@@ -206,3 +214,4 @@ T001–T048 (through US1 integration test). US2 (T049–T055) required before ca
 - Worker project optional — omit unless sync generate proves too slow
 - Canonical API entity: `OptimizationRun`; UI “Recommendations” is a display label only
 - Analyze remediation 2026-07-26: I1/U1–U6 addressed in spec + tasks
+- Visual polish 2026-07-26: T062–T064 implement FR-006a (map + margin chart)
