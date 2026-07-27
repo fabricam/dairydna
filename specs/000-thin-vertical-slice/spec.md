@@ -35,11 +35,14 @@ one feasible recommended movement and an explainable margin breakdown.
 **Acceptance Scenarios**:
 
 1. **Given** the thin-slice dataset, **When** the planner opens the demo home,
-   **Then** inventory, demand, prices, and fleet summary are visible.
+   **Then** inventory, demand, prices, and fleet summary are visible, and a
+   **network map** (or regional scatter) shows facilities and customers.
 2. **Given** that dataset, **When** optimization is run for the demo day,
    **Then** the system returns a feasible plan or an explicit infeasible status.
-3. **Given** a feasible plan, **When** viewing a recommended movement, **Then**
-   revenue, transport cost, and expected contribution margin are shown.
+3. **Given** a feasible plan, **When** viewing recommendations, **Then**
+   revenue, transport cost, and expected contribution margin are shown in a
+   table and a **margin/cost breakdown chart**, and recommended lanes MAY appear
+   as arcs or highlighted pairs on the network map.
 4. **Given** insufficient truck capacity to move all inventory, **When**
    optimizing, **Then** the plan remains feasible and reports unused inventory
    and/or unserved demand rather than inventing capacity.
@@ -104,6 +107,10 @@ recommendation summaries.
   (Blazor + Semantic UI + Fluxor). HTTP endpoints MUST use ASP.NET Core Minimal
   APIs with no MVC controllers. Generate and optimize actions MUST be available
   without authentication in this feature (open local demo access).
+- **FR-006a**: Demo UI MUST include a **network map/scatter** of facilities and
+  customers (lat/lon) and, after optimize, a **chart** of contribution margin
+  and/or cost components for recommended movements (tables alone are not
+  sufficient for the primary recommendation view). See `specs/_visual-aids.md`.
 - **FR-007**: Temporary naive optimizer is allowed; Feature 009 becomes system
   of record later (ADR required if both remain).
 - **FR-008**: The local demo SHOULD bind for local development use; production

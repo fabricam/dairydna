@@ -95,6 +95,8 @@ risk signals — with documented noise so models cannot overfit “perfect” da
 - **FR-004**: System MUST emit a validation report covering referential
   integrity and domain invariants.
 - **FR-005**: System MUST mark all generated data as synthetic / non-PII.
+- **FR-005a**: Generated farms, facilities, and customers MUST include usable
+  lat/lon so network **maps** in 001/004/000 can render without manual geocoding.
 - **FR-006**: System MUST version schema and generator implementation on each
   run.
 - **FR-007**: Same seed + profile configuration MUST reproduce matching

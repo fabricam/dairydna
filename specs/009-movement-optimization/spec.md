@@ -37,8 +37,10 @@ windows) plus independent feasibility validator.
 1. **Given** inventory, demand/orders, trucks, and prices, **When** optimize
    runs, **Then** status is Feasible or explicit Infeasible/Failed — never a
    silent invalid plan labeled recommended.
-2. **Given** a feasible run with movements, **When** inspecting a movement,
-   **Then** explanation includes margin factors and binding constraints.
+2. **Given** a feasible run with movements, **When** inspecting recommendations,
+   **Then** explanation includes margin factors and binding constraints, a
+   **margin/cost breakdown chart** is shown, and recommended O→D moves appear
+   as **arcs or highlighted pairs on the network map**.
 3. **Given** insufficient capacity, **When** optimize runs, **Then** plan stays
    feasible and reports unserved demand and/or unused inventory.
 4. **Given** only negative-margin options, **When** optimize runs, **Then**
@@ -115,6 +117,10 @@ version string; ADR referenced from plan.
   comparison.
 - **FR-007**: Every movement MUST be explainable (factors, costs, constraints,
   assumptions).
+- **FR-007a**: Recommendations UI MUST include (1) a **network map** with
+  recommended flow arcs or highlighted O→D pairs and (2) a **chart** of margin
+  and cost components across movements. Tables alone are not sufficient for the
+  primary recommendations view (`specs/_visual-aids.md`).
 - **FR-008**: Price inputs MUST support forecast point/lower/upper and user
   scenario override.
 - **FR-009**: Canonical API entity remains `OptimizationRun`; UI may say

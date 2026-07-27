@@ -64,7 +64,9 @@ baseline, limitations, and leakage-control statement.
 **Acceptance Scenarios**:
 
 1. **Given** a published supply model, **When** opening its card, **Then**
-   baseline comparison and “not production advice” limitation are visible.
+   baseline comparison and “not production advice” limitation are visible, and
+   key metrics appear as a **simple chart** (e.g., model vs baseline WAPE bars)
+   in addition to numeric tables.
 
 ---
 
@@ -85,6 +87,8 @@ baseline, limitations, and leakage-control statement.
 - **FR-003**: System MUST support candidate → published → retired lifecycle.
 - **FR-004**: System MUST audit publish/retire (and override) actions.
 - **FR-005**: System MUST expose a model card view for published models.
+- **FR-005a**: Model cards MUST include at least one **metric comparison chart**
+  (model vs baseline) (`specs/_visual-aids.md`).
 - **FR-006**: Forecasts and optimization runs MUST remain traceable to versions
   after retirement.
 - **FR-007**: Secrets MUST NOT appear in model metadata or cards.

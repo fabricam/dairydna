@@ -35,21 +35,25 @@ modeled).
 
 ---
 
-### User Story 2 — Inspect forecast bands on the dashboard (Priority: P1)
+### User Story 2 — Inspect forecast bands on charts (Priority: P1)
 
-A planner views supply forecast bands for a facility/region and can distinguish
-actuals vs forecasts.
+A planner views supply forecast **time-series charts** (point + lower/upper
+bands) for a facility/region and can distinguish actuals vs forecasts. A small
+**map or location picker** identifies which facility is charted.
 
 **Why this priority**: Constitution VII honesty in the UI.
 
-**Independent Test**: Open forecast panel; verify labels and interval display.
+**Independent Test**: Open forecast panel; verify chart bands, labels, and
+facility selection.
 
 **Acceptance Scenarios**:
 
-1. **Given** published forecasts, **When** viewing a facility, **Then** point
-   and bounds are shown and labeled as forecasts.
+1. **Given** published forecasts, **When** viewing a facility, **Then** a
+   time-series chart shows point and bounds labeled as forecasts.
 2. **Given** actual production for past dates, **When** overlapping the chart,
-   **Then** actuals and forecasts are visually distinct.
+   **Then** actuals and forecasts are visually distinct (not color-only).
+3. **Given** multiple facilities, **When** selecting another on the map/list,
+   **Then** the chart updates to that facility’s series.
 
 ---
 
@@ -94,6 +98,9 @@ hyperparameters, seed, metrics, and model version.
 - **FR-006**: System MUST version models and bind forecasts to model + dataset
   versions.
 - **FR-007**: UI MUST not present forecasts as guaranteed volumes.
+- **FR-007a**: UI MUST render supply forecasts as **time-series charts with
+  interval bands** (tables alone are insufficient for the primary forecast
+  view). See `specs/_visual-aids.md`.
 - **FR-008**: Forecasting module MUST sit behind interfaces (ML.NET default).
 
 ### Key Entities

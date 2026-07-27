@@ -75,8 +75,9 @@ Supports: forecast point, lower bound, upper bound, user scenario price.
 | Flagship scenario | Cream excess + distant high price vs nearby contract penalty + heat + demand spike + diesel + plant capacity loss + expiring cream |
 | Reproducible interview result | Same seed/config → same recommendation economics within documented tolerance |
 | Workstation scale | Thin slice always; standard 3-year demo documented with machine profile |
-| Required visuals | Network summary, inventory age/risk, forecast bands, recommendation table with cost breakdown, scenario compare — built with **Blazor + Semantic UI + Fluxor** |
+| Required visuals | **Network map** (farms/facilities/customers); **inventory age/risk chart**; **forecast band time-series**; **recommendation cost/margin bars**; **scenario compare charts**; optional flow arcs on map — built with **Blazor + Semantic UI + Fluxor** (see `specs/_visual-aids.md`) |
 | Intentional limitations to show | No auto-dispatch; forecasts ≠ guaranteed prices; R1 logistics simplifications labeled |
+| Map fidelity | Schematic regional plot from lat/lon is sufficient; commercial map API not required for demo v1 |
 
 ---
 
@@ -85,3 +86,4 @@ Supports: forecast point, lower bound, upper bound, user scenario price.
 | Date | Change | Reason |
 |------|--------|--------|
 | 2026-07-26 | Initial defaults | Close original clarify backlog for DairyDNA |
+| 2026-07-26 | Visual aids: maps + charts required | Prefer spatial/temporal visuals over tables-only UI |

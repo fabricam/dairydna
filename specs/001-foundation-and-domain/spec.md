@@ -13,14 +13,15 @@
 
 A demo administrator opens DairyDNA and views farms, facilities, customers,
 products, trucks, and contracts so they can understand the operating network
-before generating or optimizing data.
+before generating or optimizing data. Spatial entities MUST be visible on a
+**simple network map** (regional lat/lon plot), not only in lists.
 
 **Why this priority**: Without a shared domain language and browsable reference
 data, later forecasting and optimization features have nothing coherent to
 attach to.
 
-**Independent Test**: Seed a small set of reference entities and verify list
-and detail views for each entity type.
+**Independent Test**: Seed a small set of reference entities and verify list,
+detail, and map views for farms, facilities, and customers.
 
 **Acceptance Scenarios**:
 
@@ -28,7 +29,10 @@ and detail views for each entity type.
    list, **Then** each farm shows region, herd size, and active status.
 2. **Given** seeded facilities, **When** filtering by facility type, **Then**
    only matching facilities appear.
-3. **Given** the application is running, **When** a health endpoint is queried,
+3. **Given** seeded farms, facilities, and customers with coordinates, **When**
+   opening the network map, **Then** each active entity appears at its lat/lon
+   with a legend distinguishing entity types.
+4. **Given** the application is running, **When** a health endpoint is queried,
    **Then** the system reports a healthy ready state for core dependencies.
 
 ---
@@ -101,6 +105,8 @@ active lists but still retrievable by id including historical flag.
   and product–truck compatibility.
 - **FR-003**: Users MUST be able to list and view detail for farms, facilities,
   customers, products, trucks, and contracts.
+- **FR-003a**: Users MUST be able to view farms, facilities, and customers on a
+  **network map** (schematic lat/lon plot with legend). See `specs/_visual-aids.md`.
 - **FR-004**: System MUST allow soft-deactivation of reference entities without
   deleting historical records.
 - **FR-005**: System MUST expose health information for the running application.

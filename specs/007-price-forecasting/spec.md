@@ -33,14 +33,15 @@ optimistic / user scenario prices.
 
 ---
 
-### User Story 2 — Honest presentation (Priority: P1)
+### User Story 2 — Honest price charts (Priority: P1)
 
-Planners see price bands labeled as forecasts — never as executable trade
-quotes or guaranteed clearing prices.
+Planners see price **time-series charts with forecast bands** labeled as
+forecasts — never as executable trade quotes or guaranteed clearing prices.
 
 **Why this priority**: Product honesty boundary and constitution VII.
 
-**Independent Test**: UI copy and API field names include forecast semantics.
+**Independent Test**: UI copy and chart/API field names include forecast
+semantics; actual vs forecast series are distinct.
 
 **Acceptance Scenarios**:
 
@@ -88,6 +89,8 @@ pipeline completes with metrics.
 - **FR-004**: Report WAPE (primary), MAE, RMSE, bias, interval coverage.
 - **FR-005**: Version models, datasets, and published forecast sets.
 - **FR-006**: UI/API MUST NOT present forecasts as trade execution prices.
+- **FR-006a**: Primary price forecast view MUST be a **time-series chart with
+  interval bands** (`specs/_visual-aids.md`).
 - **FR-007**: Support mixing synthetic and public observations with provenance.
 
 ### Key Entities

@@ -32,22 +32,24 @@ same-day-previous-week baseline (documented per model card).
 
 ---
 
-### User Story 2 — Planner views demand bands (Priority: P1)
+### User Story 2 — Planner views demand forecast charts (Priority: P1)
 
-A planner sees demand forecast bands alongside open orders and can tell
-forecast vs committed demand apart.
+A planner sees demand forecast **time-series charts with bands** alongside open
+orders and can tell forecast vs committed demand apart. Customer/segment
+selection MAY use list + optional map highlight.
 
 **Why this priority**: Honest uncertainty for sales/ops decisions.
 
-**Independent Test**: UI shows open orders and forecast series with distinct
-labels.
+**Independent Test**: UI shows open orders and forecast chart series with
+distinct labels.
 
 **Acceptance Scenarios**:
 
 1. **Given** published demand forecasts, **When** opening a customer view,
-   **Then** point/bounds display as forecasts.
+   **Then** a chart shows point/bounds as forecasts.
 2. **Given** open orders for the as-of date, **When** viewing the same screen,
-   **Then** orders are not labeled as forecasts.
+   **Then** orders are not labeled as forecasts and are visually separable from
+   the forecast series.
 
 ---
 
@@ -92,6 +94,8 @@ before as-of.
   week) and reported every evaluation.
 - **FR-007**: Version model + dataset on every published forecast.
 - **FR-008**: UI MUST distinguish forecasts from orders/contracts.
+- **FR-008a**: Primary demand forecast view MUST be a **time-series chart with
+  interval bands** (`specs/_visual-aids.md`).
 
 ### Key Entities
 

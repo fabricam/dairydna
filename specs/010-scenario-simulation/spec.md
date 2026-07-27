@@ -29,7 +29,8 @@ API returns both runs’ objectives and movement diffs.
    distinct economics.
 2. **Given** base and scenario runs, **When** opening compare view, **Then**
    objective, unserved demand, unused inventory, and key movements are shown
-   side-by-side.
+   side-by-side with **compare charts** (e.g., grouped bars for objective and
+   service metrics) and optional **map overlay** of differing flows.
 3. **Given** scenario inputs, **When** saved, **Then** they are versioned and
    re-runnable with the same results under reproducibility rules.
 
@@ -88,6 +89,9 @@ Failed or timed-out scenario solves are not shown as complete recommendations.
 - **FR-004**: System MUST ship a flagship scenario pack for demos.
 - **FR-005**: Scenario definitions MUST be versioned and reproducible.
 - **FR-006**: UI MUST use Semantic UI + Fluxor compare views with honesty labels.
+- **FR-006a**: Scenario compare MUST include **charts** for objective and key
+  service metrics (base vs scenario); SHOULD overlay differing recommended
+  flows on a **network map** (`specs/_visual-aids.md`).
 - **FR-007**: Failed runs MUST NOT be labeled as successful recommendations.
 
 ### Key Entities

@@ -28,8 +28,9 @@ Use this index to review specs and activate a feature for plan → tasks → imp
 ## How to review
 
 1. Read the feature `spec.md` and the program clarifications.
-2. Optionally run `/speckit-clarify` on that feature to lock open questions.
-3. Run `/speckit-checklist` if you want a review checklist before planning.
+2. Check [`_visual-aids.md`](./_visual-aids.md) — UI features must include maps/charts where listed.
+3. Optionally run `/speckit-clarify` on that feature to lock open questions.
+4. Run `/speckit-checklist` if you want a review checklist before planning.
 
 ## How to run (Spec Kit loop)
 
@@ -62,3 +63,6 @@ Do **not** jump to implement without plan + tasks for draft features.
 | M2 Forecasting | 003, 005, 006, 007, 011 |
 | M3 Optimization | 008, 009, 010 |
 | M4 Portfolio | 012, 013 |
+
+**Visuals (all milestones):** network map; inventory age chart; forecast bands; margin/cost bars; scenario compare charts; optional flow arcs — see [`_visual-aids.md`](./_visual-aids.md).
+

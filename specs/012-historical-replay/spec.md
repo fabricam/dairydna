@@ -53,22 +53,24 @@ on at least one documented scenario.
 
 ---
 
-### User Story 3 — Step through days in the UI (Priority: P2)
+### User Story 3 — Step through days with timeline visuals (Priority: P2)
 
-A reviewer steps as-of date forward/back and sees dashboard + recommendation
-outputs update for replay context.
+A reviewer steps as-of date forward/back via a **timeline or date scrubber** and
+sees dashboard map/charts + recommendation outputs update for replay context.
 
 **Why this priority**: Interview narrative control.
 
-**Independent Test**: Change as-of; panels refresh to that date’s replay or
+**Independent Test**: Change as-of; map/charts refresh to that date’s replay or
 prompt to run replay.
 
 **Acceptance Scenarios**:
 
 1. **Given** replay results for dates D and D+1, **When** stepping the control,
-   **Then** the correct run’s summary is shown.
+   **Then** the correct run’s summary and charts are shown.
 2. **Given** a date without replay, **When** selected, **Then** UI offers run
    replay rather than showing another day’s plan silently.
+3. **Given** a regret report, **When** opened, **Then** optimizer vs baseline
+   metrics appear as a **comparison chart**, not metrics-only prose.
 
 ---
 
@@ -88,6 +90,9 @@ prompt to run replay.
   date window.
 - **FR-004**: Replays MUST record model/optimizer/costing versions used.
 - **FR-005**: UI MUST allow selecting as-of date and viewing replay outputs.
+- **FR-005a**: Replay UI MUST include a **date timeline/scrubber** and reuse
+  dashboard **map/chart** visuals for the selected as-of; regret reports MUST
+  include a **comparison chart** (`specs/_visual-aids.md`).
 - **FR-006**: Reproducibility rules match optimization (exact objective/
   quantities; costs ≤0.01).
 

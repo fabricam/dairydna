@@ -26,7 +26,8 @@ verify raw checksum, import-run status, and canonical rows.
 1. **Given** a configured source and fixture payload, **When** import runs,
    **Then** an ImportRun records source, timestamps, row counts, and checksum.
 2. **Given** successful import, **When** querying market prices for that
-   product/region/date, **Then** observations are available with source label.
+   product/region/date, **Then** observations are available with source label
+   and MAY render on dashboard **price charts**.
 3. **Given** the honesty boundary, **When** viewing imported data in UI/API,
    **Then** data is labeled as public/external — not DairyDNA forecasts.
 

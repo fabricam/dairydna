@@ -91,8 +91,11 @@ dashboard.
   optimize jobs.
 - **FR-005**: Documentation MUST state honesty boundary and R1 logistics
   simplifications.
+- **FR-005a**: Demo script MUST exercise **network map**, at least one **chart**
+  (inventory age, forecast band, or margin breakdown), and recommendations —
+  not a tables-only walkthrough (`specs/_visual-aids.md`).
 - **FR-006**: Accessibility smoke: keyboard reachability of primary demo
-  controls.
+  controls including map/chart alternatives.
 - **FR-007**: Failed jobs MUST surface actionable errors in UI/logs.
 
 ### Key Deliverables (not only entities)
