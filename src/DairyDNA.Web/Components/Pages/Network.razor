@@ -1,0 +1,84 @@
+@page "/network"
+@rendermode InteractiveServer
+@using DairyDNA.Web.Components.Visuals
+@inject IHttpClientFactory HttpClientFactory
+@inject IState<GenerationState> GenerationState
+
+<PageTitle>Network map</PageTitle>
+
+<div class="ui container" style="margin-top:2em;">
+    <h1 class="ui header">Dairy network map <div class="ui teal label">Synthetic</div></h1>
+    <p>Farms, facilities, and customers for the selected generation (schematic lat/lon plot).</p>
+
+    @if (GenerationState.Value.GenerationId is null)
+    {
+        <div class="ui warning message">Generate thin-slice data on the <a href="/">home page</a> first.</div>
+    }
+    else if (_error is not null)
+    {
+        <div class="ui negative message">@_error</div>
+    }
+    else if (_loading)
+    {
+        <div class="ui active inline loader"></div>
+    }
+    else
+    {
+        <div class="ui segment dd-visual-panel">
+            <NetworkMap Points="_points"
+                        AriaLabel="Network map of farms, facilities, and customers"
+                        TextAlternative="@_alt" />
+            <div class="dd-map-legend">
+                <span class="dd-legend-farm">■ Farm</span>
+                <span class="dd-legend-facility">■ Facility</span>
+                <span class="dd-legend-customer">■ Customer</span>
+            </div>
+        </div>
+        <button class="ui button" @onclick="Reload">Refresh</button>
+    }
+
+    <a class="ui button" href="/">Home</a>
+    <a class="ui button" href="/reference">Reference data</a>
+</div>
+
+@code {
+    private bool _loading = true;
+    private string? _error;
+    private string _alt = string.Empty;
+    private List<NetworkMap.NetworkPointVm> _points = [];
+
+    protected override async Task OnInitializedAsync() => await Reload();
+
+    private async Task Reload()
+    {
+        _loading = true;
+        _error = null;
+        try
+        {
+            if (GenerationState.Value.GenerationId is not Guid gid)
+            {
+                _loading = false;
+                return;
+            }
+
+            var client = HttpClientFactory.CreateClient("DairyDNA.Api");
+            var payload = await client.GetFromJsonAsync<NetworkDto>($"api/network?generationId={gid}&activeOnly=true");
+            _points = (payload?.points ?? []).Select(p => new NetworkMap.NetworkPointVm(p.id, p.kind, p.name, p.latitude, p.longitude)).ToList();
+            var farms = _points.Count(p => p.kind.Equals("Farm", StringComparison.OrdinalIgnoreCase));
+            var facilities = _points.Count(p => p.kind.Equals("Facility", StringComparison.OrdinalIgnoreCase));
+            var customers = _points.Count(p => p.kind.Equals("Customer", StringComparison.OrdinalIgnoreCase));
+            _alt = $"Map shows {farms} farms, {facilities} facilities, and {customers} customers (synthetic).";
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private sealed record NetworkDto(List<PointDto> points);
+    private sealed record PointDto(Guid id, string kind, string name, decimal latitude, decimal longitude);
+}

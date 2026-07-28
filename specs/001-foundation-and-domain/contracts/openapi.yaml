@@ -1,0 +1,85 @@
+openapi: 3.0.3
+info:
+  title: DairyDNA Foundation Reference Data API
+  version: 0.2.0
+paths:
+  /api/network:
+    get:
+      parameters:
+        - name: generationId
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+        - name: activeOnly
+          in: query
+          schema: { type: boolean, default: true }
+      responses:
+        "200":
+          description: Network map points (Farm, Facility, Customer)
+  /api/farms:
+    get:
+      parameters:
+        - name: generationId
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+        - name: activeOnly
+          in: query
+          schema: { type: boolean, default: true }
+      responses:
+        "200": { description: Farm list }
+    post:
+      responses:
+        "201": { description: Created }
+        "400": { description: Validation failed }
+  /api/farms/{id}/deactivate:
+    post:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200": { description: Deactivated }
+  /api/facilities:
+    get:
+      responses:
+        "200": { description: Facility list (optional facilityType filter) }
+    post:
+      responses:
+        "201": { description: Created }
+        "400": { description: Validation failed }
+  /api/customers:
+    get:
+      responses:
+        "200": { description: Customer list }
+    post:
+      responses:
+        "201": { description: Created }
+        "400": { description: Validation failed }
+  /api/products:
+    get:
+      responses:
+        "200": { description: Product list }
+    post:
+      responses:
+        "201": { description: Created }
+  /api/trucks:
+    get:
+      responses:
+        "200": { description: Truck list }
+    post:
+      responses:
+        "201": { description: Created }
+  /api/contracts:
+    get:
+      responses:
+        "200": { description: Contract list }
+    post:
+      responses:
+        "201": { description: Created }
+        "400": { description: Validation failed }
+  /api/shipments:
+    get:
+      responses:
+        "200": { description: Shipment list (read-only) }

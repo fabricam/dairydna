@@ -33,6 +33,7 @@ public sealed class GetDemoSummaryHandler
         var day = asOfDate ?? gen.PlanningDate;
 
         var facilities = await _db.Facilities.Where(x => x.GenerationId == generationId).ToListAsync(ct);
+        var farms = await _db.Farms.Where(x => x.GenerationId == generationId).ToListAsync(ct);
         var products = await _db.Products.Where(x => x.GenerationId == generationId).ToListAsync(ct);
         var productMap = products.ToDictionary(x => x.Id);
         var facilityMap = facilities.ToDictionary(x => x.Id);
@@ -68,8 +69,9 @@ public sealed class GetDemoSummaryHandler
         var trucks = await _db.Trucks.Where(x => x.GenerationId == generationId).ToListAsync(ct);
         var fleet = trucks.Select(t => new TruckSummaryRow(t.Id, t.MaximumCapacityPounds, t.Status.ToString())).ToList();
 
-        var network = facilities
-            .Select(f => new NetworkMapPoint(f.Id, "Facility", f.Name, f.Latitude, f.Longitude))
+        var network = farms
+            .Select(f => new NetworkMapPoint(f.Id, "Farm", f.Name, f.Latitude, f.Longitude))
+            .Concat(facilities.Select(f => new NetworkMapPoint(f.Id, "Facility", f.Name, f.Latitude, f.Longitude)))
             .Concat(customers.Values.Select(c => new NetworkMapPoint(c.Id, "Customer", c.Name, c.Latitude, c.Longitude)))
             .ToList();
 

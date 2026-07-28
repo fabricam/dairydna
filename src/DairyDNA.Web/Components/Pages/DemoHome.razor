@@ -53,6 +53,7 @@
                         AriaLabel="Schematic network map of facilities and customers"
                         TextAlternative="@NetworkAltText(summary.network)" />
             <div class="dd-map-legend">
+                <span class="dd-legend-farm">■ Farm</span>
                 <span class="dd-legend-facility">■ Facility</span>
                 <span class="dd-legend-customer">■ Customer</span>
             </div>
@@ -97,8 +98,9 @@
 
     private static string NetworkAltText(List<NetworkPointDto> network)
     {
+        var farms = network.Count(p => p.kind.Equals("Farm", StringComparison.OrdinalIgnoreCase));
         var facilities = network.Count(p => p.kind.Equals("Facility", StringComparison.OrdinalIgnoreCase));
         var customers = network.Count(p => p.kind.Equals("Customer", StringComparison.OrdinalIgnoreCase));
-        return $"Network map shows {facilities} facilities and {customers} customers plotted by latitude and longitude (schematic, synthetic data).";
+        return $"Network map shows {farms} farms, {facilities} facilities, and {customers} customers plotted by latitude and longitude (schematic, synthetic data).";
     }
 }

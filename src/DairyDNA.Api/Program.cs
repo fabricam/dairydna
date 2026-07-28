@@ -27,6 +27,7 @@ builder.Services.AddScoped<ListGenerationRunsHandler>();
 builder.Services.AddScoped<GetDemoSummaryHandler>();
 builder.Services.AddScoped<CreateOptimizationRunHandler>();
 builder.Services.AddScoped<GetOptimizationRunHandler>();
+builder.Services.AddScoped<DairyDNA.Application.Reference.ReferenceDataHandlers>();
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
 
@@ -50,6 +51,7 @@ app.MapGet("/health", () => Results.Ok(new { status = "Healthy" }));
 app.MapGenerationEndpoints();
 app.MapDemoEndpoints();
 app.MapOptimizationEndpoints();
+app.MapReferenceEndpoints();
 
 app.Run();
 

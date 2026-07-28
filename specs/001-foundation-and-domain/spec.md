@@ -2,10 +2,10 @@
 
 **Feature Branch**: `001-foundation-and-domain`  
 **Created**: 2026-07-26  
-**Status**: Draft — ready for `/speckit-clarify` → `/speckit-plan`  
+**Status**: Implemented  
 **Product**: DairyDNA  
 **Input**: Program plan `specs/000-program/program-plan.md` + original DairyFlow foundation intent, renamed and scoped  
-**Depends on**: 000 (shared domain types may already exist; expand coverage here)
+**Depends on**: 000 (shared domain types expanded here)
 
 ## User Scenarios & Testing
 

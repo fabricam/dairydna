@@ -63,6 +63,12 @@ h1:focus {
     stroke-width: 1;
 }
 
+.dd-map-farm {
+    fill: #7a5c29;
+    stroke: #4a3718;
+    stroke-width: 1;
+}
+
 .dd-map-customer {
     fill: #2a9d8f;
     stroke: #1b6b61;
@@ -105,5 +111,6 @@ h1:focus {
 }
 
 .dd-legend-facility { color: #1f4e79; font-weight: 600; }
+.dd-legend-farm { color: #7a5c29; font-weight: 600; }
 .dd-legend-customer { color: #2a9d8f; font-weight: 600; }
 .dd-legend-arc { color: #e76f51; font-weight: 600; }

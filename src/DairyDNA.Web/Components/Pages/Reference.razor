@@ -1,0 +1,191 @@
+@page "/reference"
+@rendermode InteractiveServer
+@inject IHttpClientFactory HttpClientFactory
+@inject IState<GenerationState> GenerationState
+
+<PageTitle>Reference data</PageTitle>
+
+<div class="ui container" style="margin-top:2em;">
+    <h1 class="ui header">Reference data <div class="ui teal label">Synthetic</div></h1>
+
+    @if (GenerationState.Value.GenerationId is not Guid gid)
+    {
+        <div class="ui warning message">Generate thin-slice data on the <a href="/">home page</a> first.</div>
+    }
+    else
+    {
+        <div class="ui secondary menu">
+            @foreach (var tab in _tabs)
+            {
+                <a class="item @(_entity == tab ? "active" : null)" @onclick="() => Select(tab)">@tab</a>
+            }
+        </div>
+
+        <div class="ui checkbox" style="margin-bottom:1em;">
+            <input type="checkbox" checked="@_includeInactive" @onchange="ToggleInactive" />
+            <label>Include inactive</label>
+        </div>
+
+        @if (_error is not null)
+        {
+            <div class="ui negative message">@_error</div>
+        }
+        @if (_warning is not null)
+        {
+            <div class="ui warning message">@_warning</div>
+        }
+        @if (_loading)
+        {
+            <div class="ui active inline loader"></div>
+        }
+        else
+        {
+            <table class="ui celled table">
+                <thead>
+                <tr>
+                    @foreach (var h in _headers)
+                    {
+                        <th>@h</th>
+                    }
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var row in _rows)
+                {
+                    <tr>
+                        @foreach (var cell in row.Cells)
+                        {
+                            <td>@cell</td>
+                        }
+                        <td>
+                            @if (row.Active)
+                            {
+                                <button class="ui mini button" @onclick="() => Deactivate(row.Id)">Deactivate</button>
+                            }
+                            else
+                            {
+                                <span class="ui grey label">Inactive</span>
+                            }
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        }
+    }
+
+    <a class="ui button" href="/">Home</a>
+    <a class="ui button" href="/network">Network map</a>
+</div>
+
+@code {
+    private readonly string[] _tabs = ["farms", "facilities", "customers", "products", "trucks", "contracts"];
+    private string _entity = "farms";
+    private bool _includeInactive;
+    private bool _loading;
+    private string? _error;
+    private string? _warning;
+    private string[] _headers = [];
+    private List<RowVm> _rows = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (GenerationState.Value.GenerationId is not null)
+            await Load();
+    }
+
+    private async Task Select(string tab)
+    {
+        _entity = tab;
+        await Load();
+    }
+
+    private async Task ToggleInactive(ChangeEventArgs e)
+    {
+        _includeInactive = e.Value is bool b && b || string.Equals(e.Value?.ToString(), "true", StringComparison.OrdinalIgnoreCase);
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        if (GenerationState.Value.GenerationId is not Guid gid) return;
+        _loading = true;
+        _error = null;
+        _warning = null;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("DairyDNA.Api");
+            var activeOnly = !_includeInactive;
+            var url = $"api/{_entity}?generationId={gid}&activeOnly={activeOnly}";
+            using var doc = await client.GetFromJsonAsync<System.Text.Json.JsonDocument>(url);
+            _rows = [];
+            _headers = _entity switch
+            {
+                "farms" => ["Name", "Region", "Herd", "Active"],
+                "facilities" => ["Name", "Type", "Region", "Active"],
+                "customers" => ["Name", "Region", "Active"],
+                "products" => ["Code", "Name", "Max age (h)", "Active"],
+                "trucks" => ["Id", "Capacity", "Compat", "Active"],
+                "contracts" => ["Customer", "Product", "Start", "End", "Active"],
+                _ => ["Id"]
+            };
+
+            if (doc is null) return;
+            foreach (var el in doc.RootElement.EnumerateArray())
+            {
+                var id = el.GetProperty("id").GetGuid();
+                var active = el.TryGetProperty("active", out var a) && a.GetBoolean();
+                _rows.Add(new RowVm(id, active, CellsFor(el)));
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private List<string> CellsFor(System.Text.Json.JsonElement el) => _entity switch
+    {
+        "farms" => [el.GetProperty("name").GetString() ?? "", el.GetProperty("regionCode").GetString() ?? "", el.GetProperty("herdSize").GetInt32().ToString(), ActiveText(el)],
+        "facilities" => [el.GetProperty("name").GetString() ?? "", el.GetProperty("facilityType").ToString(), el.GetProperty("regionCode").GetString() ?? "", ActiveText(el)],
+        "customers" => [el.GetProperty("name").GetString() ?? "", el.GetProperty("regionCode").GetString() ?? "", ActiveText(el)],
+        "products" => [el.GetProperty("code").GetString() ?? "", el.GetProperty("name").GetString() ?? "", el.GetProperty("maximumAgeHours").GetInt32().ToString(), ActiveText(el)],
+        "trucks" => [el.GetProperty("id").GetGuid().ToString()[..8], el.GetProperty("maximumCapacityPounds").GetDecimal().ToString("0"), el.GetProperty("compatibleProductCodes").GetString() ?? "", ActiveText(el)],
+        "contracts" => [el.GetProperty("customerId").GetGuid().ToString()[..8], el.GetProperty("productId").GetGuid().ToString()[..8], el.GetProperty("startDate").GetString() ?? "", el.GetProperty("endDate").GetString() ?? "", ActiveText(el)],
+        _ => [el.GetProperty("id").GetGuid().ToString()]
+    };
+
+    private static string ActiveText(System.Text.Json.JsonElement el) =>
+        el.TryGetProperty("active", out var a) && a.GetBoolean() ? "Yes" : "No";
+
+    private async Task Deactivate(Guid id)
+    {
+        if (GenerationState.Value.GenerationId is null) return;
+        _warning = null;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("DairyDNA.Api");
+            var response = await client.PostAsync($"api/{_entity}/{id}/deactivate", null);
+            response.EnsureSuccessStatusCode();
+            if (_entity == "facilities")
+            {
+                var payload = await response.Content.ReadFromJsonAsync<FacilityDeactivateDto>();
+                if (!string.IsNullOrWhiteSpace(payload?.warning))
+                    _warning = payload.warning;
+            }
+            await Load();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private sealed record RowVm(Guid Id, bool Active, List<string> Cells);
+    private sealed record FacilityDeactivateDto(string? warning);
+}

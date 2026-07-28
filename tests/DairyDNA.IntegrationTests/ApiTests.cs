@@ -62,6 +62,7 @@ public class ThinSliceHappyPathTests : IClassFixture<DairyDnaApiFactory>
         summary.network.Should().NotBeEmpty();
         summary.network.Should().Contain(p => p.kind == "Facility");
         summary.network.Should().Contain(p => p.kind == "Customer");
+        summary.network.Should().Contain(p => p.kind == "Farm");
 
         var optResponse = await _client.PostAsJsonAsync("/api/optimization-runs", new { generationId = gen.id });
         optResponse.EnsureSuccessStatusCode();

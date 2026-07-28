@@ -114,13 +114,34 @@ public sealed class ThinSliceGenerator : IThinSliceGenerator
                 CostPerHour = 55m + i * 2m,
                 AvailableFrom = planningDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc),
                 AvailableUntil = planningDate.ToDateTime(new TimeOnly(23, 59), DateTimeKind.Utc),
-                Status = TruckStatus.Available
+                Status = TruckStatus.Available,
+                Active = true
             });
         }
         _db.AddRange(trucks);
 
         var milk = products[0];
         var cream = products[1];
+        var contracts = new List<Contract>();
+        for (var i = 0; i < Math.Min(3, customers.Count); i++)
+        {
+            contracts.Add(new Contract
+            {
+                Id = CreateDeterministicGuid(id, request.RandomSeed, $"contract-{i}"),
+                GenerationId = id,
+                CustomerId = customers[i].Id,
+                ProductId = i % 2 == 0 ? milk.Id : cream.Id,
+                StartDate = request.StartDate,
+                EndDate = request.EndDate,
+                MinimumQuantityPounds = 5_000,
+                MaximumQuantityPounds = 50_000,
+                PricePerPound = i % 2 == 0 ? 0.20m : 0.90m,
+                ShortfallPenaltyPerPound = 0.05m,
+                Active = true
+            });
+        }
+        _db.AddRange(contracts);
+
         var dayCount = request.EndDate.DayNumber - request.StartDate.DayNumber + 1;
         var lots = new List<InventoryLot>();
         var orders = new List<Order>();
@@ -229,6 +250,7 @@ public sealed class ThinSliceGenerator : IThinSliceGenerator
             ["customers"] = customers.Count,
             ["trucks"] = trucks.Count,
             ["products"] = products.Length,
+            ["contracts"] = contracts.Count,
             ["inventoryLots"] = lots.Count,
             ["orders"] = orders.Count,
             ["marketPrices"] = prices.Count

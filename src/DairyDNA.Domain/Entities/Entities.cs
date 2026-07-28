@@ -57,6 +57,7 @@ public sealed class Product
     public string Name { get; set; } = string.Empty;
     public int MaximumAgeHours { get; set; }
     public string UnitOfMeasure { get; set; } = "lb";
+    public bool Active { get; set; } = true;
 }
 
 public sealed class InventoryLot
@@ -113,6 +114,7 @@ public sealed class Truck
     public DateTimeOffset AvailableFrom { get; set; }
     public DateTimeOffset AvailableUntil { get; set; }
     public TruckStatus Status { get; set; } = TruckStatus.Available;
+    public bool Active { get; set; } = true;
 }
 
 public sealed class MarketPrice
@@ -162,4 +164,34 @@ public sealed class RecommendedMovement
     public DateTimeOffset DepartureTime { get; set; }
     public DateTimeOffset ArrivalTime { get; set; }
     public string Explanation { get; set; } = string.Empty;
+}
+
+public sealed class Contract
+{
+    public Guid Id { get; set; }
+    public Guid GenerationId { get; set; }
+    public Guid CustomerId { get; set; }
+    public Guid ProductId { get; set; }
+    public DateOnly StartDate { get; set; }
+    public DateOnly EndDate { get; set; }
+    public decimal MinimumQuantityPounds { get; set; }
+    public decimal MaximumQuantityPounds { get; set; }
+    public decimal PricePerPound { get; set; }
+    public decimal ShortfallPenaltyPerPound { get; set; }
+    public bool Active { get; set; } = true;
+}
+
+public sealed class Shipment
+{
+    public Guid Id { get; set; }
+    public Guid GenerationId { get; set; }
+    public Guid OriginFacilityId { get; set; }
+    public DestinationType DestinationType { get; set; }
+    public Guid DestinationId { get; set; }
+    public Guid ProductId { get; set; }
+    public decimal QuantityPounds { get; set; }
+    public Guid? TruckId { get; set; }
+    public DateTimeOffset? DepartedAt { get; set; }
+    public DateTimeOffset? ArrivedAt { get; set; }
+    public ShipmentStatus Status { get; set; } = ShipmentStatus.Planned;
 }

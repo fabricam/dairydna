@@ -34,7 +34,9 @@
         foreach (var point in Points)
         {
             var (x, y) = Project(point.latitude, point.longitude);
-            var css = point.kind.Equals("Facility", StringComparison.OrdinalIgnoreCase) ? "dd-map-facility" : "dd-map-customer";
+            var css = point.kind.Equals("Facility", StringComparison.OrdinalIgnoreCase) ? "dd-map-facility"
+                : point.kind.Equals("Farm", StringComparison.OrdinalIgnoreCase) ? "dd-map-farm"
+                : "dd-map-customer";
             var title = System.Net.WebUtility.HtmlEncode($"{point.kind}: {point.name}");
             var label = System.Net.WebUtility.HtmlEncode(ShortName(point.name));
             sb.Append($"<circle cx=\"{x:0.##}\" cy=\"{y:0.##}\" r=\"7\" class=\"{css}\"><title>{title}</title></circle>");

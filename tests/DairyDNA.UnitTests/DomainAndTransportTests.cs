@@ -29,6 +29,42 @@ public class DomainInvariantTests
         DomainInvariants.TruckCompatible(truck, "CREAM").Should().BeTrue();
         DomainInvariants.TruckCompatible(truck, "BUTTER").Should().BeFalse();
     }
+
+    [Fact]
+    public void Rejects_contract_end_before_start()
+    {
+        var act = () => DomainInvariants.EnsureContractDates(new DateOnly(2025, 12, 1), new DateOnly(2025, 1, 1));
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Rejects_empty_name()
+    {
+        var act = () => DomainInvariants.EnsureNonEmptyName("  ");
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Rejects_non_positive_order_quantity()
+    {
+        var order = new Order
+        {
+            RequestedQuantityPounds = 0,
+            MinimumAcceptableQuantityPounds = 0,
+            RequestedDeliveryStart = DateTimeOffset.UtcNow,
+            RequestedDeliveryEnd = DateTimeOffset.UtcNow.AddHours(1)
+        };
+        var act = () => DomainInvariants.ValidateOrder(order);
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void Rejects_incompatible_truck_product_assignment()
+    {
+        var truck = new Truck { CompatibleProductCodes = "RAW_MILK" };
+        var act = () => DomainInvariants.EnsureTruckProductCompatible(truck, "CREAM");
+        act.Should().Throw<ArgumentException>();
+    }
 }
 
 public class TransportCostCalculatorTests

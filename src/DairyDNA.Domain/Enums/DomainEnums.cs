@@ -4,7 +4,8 @@ public enum FacilityType
 {
     Receiving = 0,
     Separation = 1,
-    Storage = 2
+    Storage = 2,
+    Processing = 3
 }
 
 public enum InventoryLotStatus
@@ -16,7 +17,9 @@ public enum InventoryLotStatus
 
 public enum OrderType
 {
-    Spot = 0
+    Spot = 0,
+    Contract = 1,
+    InternalTransfer = 2
 }
 
 public enum OrderStatus
@@ -54,4 +57,18 @@ public enum OptimizationRunStatus
     Feasible = 2,
     Infeasible = 3,
     Failed = 4
+}
+
+public enum DestinationType
+{
+    Facility = 0,
+    Customer = 1
+}
+
+public enum ShipmentStatus
+{
+    Planned = 0,
+    InTransit = 1,
+    Completed = 2,
+    Cancelled = 3
 }

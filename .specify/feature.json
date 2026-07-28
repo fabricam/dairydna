@@ -1,6 +1,6 @@
 {
-  "feature_directory": "specs/000-thin-vertical-slice",
-  "feature_number": "000",
-  "feature_name": "thin-vertical-slice",
-  "updated": "2026-07-26"
+  "feature_directory": "specs/001-foundation-and-domain",
+  "feature_number": "001",
+  "feature_name": "foundation-and-domain",
+  "updated": "2026-07-28"
 }
