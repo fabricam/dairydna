@@ -25,6 +25,7 @@
     <ProjectReference Include="..\..\src\DairyDNA.DataGenerator\DairyDNA.DataGenerator.csproj" />
     <ProjectReference Include="..\..\src\DairyDNA.Infrastructure\DairyDNA.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\DairyDNA.DataIngestion\DairyDNA.DataIngestion.csproj" />
+    <ProjectReference Include="..\..\src\DairyDNA.Forecasting\DairyDNA.Forecasting.csproj" />
   </ItemGroup>
 
 </Project>

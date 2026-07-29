@@ -2,7 +2,7 @@
 
 **Feature Branch**: `005-supply-forecasting`  
 **Created**: 2026-07-26  
-**Status**: Draft — ready for `/speckit-clarify` → `/speckit-plan`  
+**Status**: Implemented  
 **Product**: DairyDNA  
 **Input**: Program clarifications (Forecasting) + program plan Feature 005  
 **Depends on**: 002 (history); 003 optional (weather features); 011 for full governance UX (minimal versioning required here)

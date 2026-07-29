@@ -294,3 +294,52 @@ public sealed class FuelPriceObservation
     public string SourceLabel { get; set; } = "Public";
     public string DataClassification { get; set; } = "Public";
 }
+
+public sealed class SupplyModelVersion
+{
+    public Guid Id { get; set; }
+    public Guid GenerationId { get; set; }
+    public string ModelFamily { get; set; } = "supply";
+    public string Algorithm { get; set; } = "mlnet-sdca";
+    public string FeatureSchemaVersion { get; set; } = "supply-features-v1";
+    public string DatasetVersion { get; set; } = string.Empty;
+    public int RandomSeed { get; set; }
+    public string HyperparametersJson { get; set; } = "{}";
+    public string MetricsJson { get; set; } = "{}";
+    public bool MeetsAcceptanceBar { get; set; }
+    public ForecastRunStatus Status { get; set; }
+    public DateTimeOffset TrainedAt { get; set; }
+    public string? Notes { get; set; }
+    public string DataClassification { get; set; } = "Forecast";
+}
+
+public sealed class SupplyFeatureSnapshot
+{
+    public Guid Id { get; set; }
+    public Guid ModelVersionId { get; set; }
+    public Guid GenerationId { get; set; }
+    public Guid? FacilityId { get; set; }
+    public string? RegionCode { get; set; }
+    public DateOnly AsOfDate { get; set; }
+    public DateOnly FeatureDate { get; set; }
+    public string FeatureJson { get; set; } = "{}";
+}
+
+public sealed class SupplyForecast
+{
+    public Guid Id { get; set; }
+    public Guid ModelVersionId { get; set; }
+    public Guid GenerationId { get; set; }
+    public ForecastAggregationLevel AggregationLevel { get; set; }
+    public Guid? FacilityId { get; set; }
+    public string? RegionCode { get; set; }
+    public string ProductCode { get; set; } = "RAW_MILK";
+    public DateOnly AsOfDate { get; set; }
+    public DateOnly TargetDate { get; set; }
+    public int HorizonDays { get; set; }
+    public decimal PointEstimatePounds { get; set; }
+    public decimal LowerBoundPounds { get; set; }
+    public decimal UpperBoundPounds { get; set; }
+    public bool ColdStart { get; set; }
+    public string DataClassification { get; set; } = "Forecast";
+}

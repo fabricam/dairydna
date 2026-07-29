@@ -1,0 +1,149 @@
+@page "/forecasts/supply"
+@rendermode InteractiveServer
+@using DairyDNA.Web.Components.Visuals
+@inject IHttpClientFactory HttpClientFactory
+
+<PageTitle>Supply forecasts</PageTitle>
+
+<div class="ui container" style="margin-top:2em;">
+    <h1 class="ui header">Supply forecasts
+        <div class="sub header">Facility/region horizons with uncertainty — estimates only</div>
+    </h1>
+    <div class="ui warning message">
+        Forecasts are labeled <strong>Forecast</strong> and are not guaranteed volumes or trading advice.
+    </div>
+
+    <div class="ui form segment">
+        <div class="inline fields">
+            <div class="field">
+                <label>Generation</label>
+                <select @onchange="OnPickGen">
+                    <option value="">Select…</option>
+                    @foreach (var g in _generations)
+                    {
+                        <option value="@g.id">@g.profileName · @g.id</option>
+                    }
+                </select>
+            </div>
+            <button class="ui primary button" disabled="@(_generationId is null || _busy)" @onclick="RunAsync">Train &amp; publish</button>
+        </div>
+    </div>
+
+    @if (_error is not null)
+    {
+        <div class="ui negative message">@_error</div>
+    }
+
+    @if (_model is not null)
+    {
+        <div class="ui segment">
+            <div class="ui olive label">Forecast</div>
+            <p>Model @_model.id · @_model.algorithm · Status @_model.status · Meets bar @_model.meetsAcceptanceBar</p>
+            <p>@_model.notes</p>
+            <p class="ui tiny message">@_model.disclaimer</p>
+        </div>
+    }
+
+    @if (_facilities.Count > 0)
+    {
+        <h3 class="ui header">Facility picker <div class="ui teal label">Synthetic</div></h3>
+        <div class="ui segment dd-visual-panel">
+            <NetworkMap Points="_facilities"
+                        AriaLabel="Facilities for supply forecast selection"
+                        TextAlternative="@($"Map of {_facilities.Count} facilities for forecast selection.")" />
+            <div class="ui horizontal list" style="margin-top:1em;">
+                @foreach (var f in _facilities)
+                {
+                    <a class="item @(f.id == _selectedFacility ? "active" : null)" href="javascript:void(0)" @onclick="() => SelectFacility(f.id)">@f.name</a>
+                }
+            </div>
+        </div>
+    }
+
+    @if (_selectedFacility is Guid fid)
+    {
+        <h3 class="ui header">Forecast bands <div class="ui olive label">Forecast</div></h3>
+        <div class="ui segment dd-visual-panel">
+            <ForecastBandChart Actuals="_actuals" Forecasts="_forecasts"
+                               TextAlternative="Actual supply as solid line; forecast point with lower/upper band." />
+        </div>
+    }
+</div>
+
+@code {
+    private List<GenDto> _generations = [];
+    private Guid? _generationId;
+    private ModelDto? _model;
+    private List<NetworkMap.NetworkPointVm> _facilities = [];
+    private Guid? _selectedFacility;
+    private List<ForecastBandChart.ActualVm> _actuals = [];
+    private List<ForecastBandChart.ForecastVm> _forecasts = [];
+    private string? _error;
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var client = HttpClientFactory.CreateClient("DairyDNA.Api");
+        _generations = await client.GetFromJsonAsync<List<GenDto>>("api/generation-runs") ?? [];
+    }
+
+    private void OnPickGen(ChangeEventArgs e)
+    {
+        _generationId = Guid.TryParse(e.Value?.ToString(), out var id) ? id : null;
+    }
+
+    private async Task RunAsync()
+    {
+        if (_generationId is null) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("DairyDNA.Api");
+            var response = await client.PostAsJsonAsync("api/forecasts/supply/runs", new { generationId = _generationId, randomSeed = 104729 });
+            if (!response.IsSuccessStatusCode)
+            {
+                _error = await response.Content.ReadAsStringAsync();
+                return;
+            }
+            _model = await response.Content.ReadFromJsonAsync<ModelDto>();
+
+            var dash = await client.GetFromJsonAsync<DashDto>($"api/dashboard?generationId={_generationId}");
+            _facilities = dash?.network?.Where(n => n.kind == "Facility")
+                .Select(n => new NetworkMap.NetworkPointVm(n.id, n.kind, n.name, n.latitude, n.longitude)).ToList() ?? [];
+            if (_facilities.Count > 0)
+                await SelectFacility(_facilities[0].id);
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task SelectFacility(Guid id)
+    {
+        _selectedFacility = id;
+        if (_generationId is null) return;
+        var client = HttpClientFactory.CreateClient("DairyDNA.Api");
+        var actuals = await client.GetFromJsonAsync<ActualsDto>($"api/forecasts/supply/actuals?generationId={_generationId}&facilityId={id}");
+        _actuals = actuals?.items?.Select(a => new ForecastBandChart.ActualVm(a.date, a.actualPounds)).ToList() ?? [];
+        var fc = await client.GetFromJsonAsync<ForecastsDto>($"api/forecasts/supply?generationId={_generationId}&facilityId={id}");
+        _forecasts = fc?.items?
+            .Where(i => i.productCode == "RAW_MILK" && i.aggregationLevel == "Facility")
+            .Select(i => new ForecastBandChart.ForecastVm(i.targetDate, i.pointEstimatePounds, i.lowerBoundPounds, i.upperBoundPounds))
+            .ToList() ?? [];
+    }
+
+    private sealed record GenDto(Guid id, string? profileName);
+    private sealed record ModelDto(Guid id, string algorithm, string status, bool meetsAcceptanceBar, string? notes, string? disclaimer);
+    private sealed record DashDto(List<NetDto>? network);
+    private sealed record NetDto(Guid id, string kind, string name, decimal latitude, decimal longitude);
+    private sealed record ActualsDto(List<ActDto>? items);
+    private sealed record ActDto(DateOnly date, decimal actualPounds);
+    private sealed record ForecastsDto(List<FcDto>? items);
+    private sealed record FcDto(string productCode, string aggregationLevel, DateOnly targetDate, decimal pointEstimatePounds, decimal lowerBoundPounds, decimal upperBoundPounds);
+}

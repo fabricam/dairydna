@@ -89,3 +89,17 @@ public enum ImportSeriesKind
     Weather = 1,
     FuelPrice = 2
 }
+
+public enum ForecastRunStatus
+{
+    Running = 0,
+    Completed = 1,
+    CompletedBelowBar = 2,
+    Failed = 3
+}
+
+public enum ForecastAggregationLevel
+{
+    Facility = 0,
+    Region = 1
+}
