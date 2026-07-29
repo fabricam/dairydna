@@ -2,7 +2,7 @@
 
 **Feature Branch**: `003-public-data-ingestion`  
 **Created**: 2026-07-26  
-**Status**: Draft — ready for `/speckit-clarify` → `/speckit-plan`  
+**Status**: Implemented  
 **Product**: DairyDNA  
 **Input**: Program plan §5 / §10 Feature 003  
 **Depends on**: 001 (canonical observation stores); benefits from 002 for merge demos

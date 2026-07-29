@@ -19,6 +19,13 @@ public interface IDairyDnaDbContext
     IQueryable<Contract> Contracts { get; }
     IQueryable<Shipment> Shipments { get; }
     IQueryable<WeatherObservation> WeatherObservations { get; }
+    IQueryable<ImportSource> ImportSources { get; }
+    IQueryable<ImportRun> ImportRuns { get; }
+    IQueryable<RawPayload> RawPayloads { get; }
+    IQueryable<QuarantineItem> QuarantineItems { get; }
+    IQueryable<PublicMarketPrice> PublicMarketPrices { get; }
+    IQueryable<PublicWeatherObservation> PublicWeatherObservations { get; }
+    IQueryable<FuelPriceObservation> FuelPriceObservations { get; }
 
     void Add<T>(T entity) where T : class;
     void AddRange<T>(IEnumerable<T> entities) where T : class;

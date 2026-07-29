@@ -13,7 +13,7 @@ Use this index to review specs and activate a feature for plan → tasks → imp
 | 000 | `000-thin-vertical-slice` | Implemented (MVP) | [spec.md](./000-thin-vertical-slice/spec.md) |
 | 001 | `001-foundation-and-domain` | Implemented | [spec.md](./001-foundation-and-domain/spec.md) |
 | 002 | `002-synthetic-data-generator` | Implemented | [spec.md](./002-synthetic-data-generator/spec.md) |
-| 003 | `003-public-data-ingestion` | Draft | [spec.md](./003-public-data-ingestion/spec.md) |
+| 003 | `003-public-data-ingestion` | Implemented | [spec.md](./003-public-data-ingestion/spec.md) |
 | 004 | `004-operational-dashboard` | Draft | [spec.md](./004-operational-dashboard/spec.md) |
 | 005 | `005-supply-forecasting` | Draft | [spec.md](./005-supply-forecasting/spec.md) |
 | 006 | `006-demand-forecasting` | Draft | [spec.md](./006-demand-forecasting/spec.md) |

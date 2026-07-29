@@ -208,3 +208,89 @@ public sealed class Shipment
     public DateTimeOffset? ArrivedAt { get; set; }
     public ShipmentStatus Status { get; set; } = ShipmentStatus.Planned;
 }
+
+public sealed class ImportSource
+{
+    public Guid Id { get; set; }
+    public string Code { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
+    public ImportSeriesKind SeriesKind { get; set; }
+    public string SchemaVersion { get; set; } = "dairydna.public.v1";
+    public string FixtureFileName { get; set; } = string.Empty;
+    public bool Active { get; set; } = true;
+}
+
+public sealed class ImportRun
+{
+    public Guid Id { get; set; }
+    public Guid ImportSourceId { get; set; }
+    public string SourceCode { get; set; } = string.Empty;
+    public ImportSeriesKind SeriesKind { get; set; }
+    public string SchemaVersion { get; set; } = "dairydna.public.v1";
+    public string PayloadChecksumSha256 { get; set; } = string.Empty;
+    public ImportRunStatus Status { get; set; }
+    public DateTimeOffset StartedAt { get; set; }
+    public DateTimeOffset? CompletedAt { get; set; }
+    public int RawRowCount { get; set; }
+    public int CanonicalRowCount { get; set; }
+    public int QuarantineCount { get; set; }
+    public string DataClassification { get; set; } = "Public";
+    public string? FailureMessage { get; set; }
+    public Guid? PriorSuccessfulRunId { get; set; }
+}
+
+public sealed class RawPayload
+{
+    public Guid Id { get; set; }
+    public Guid ImportRunId { get; set; }
+    public string FileName { get; set; } = string.Empty;
+    public string ContentType { get; set; } = "application/json";
+    public string ChecksumSha256 { get; set; } = string.Empty;
+    public string ContentUtf8 { get; set; } = string.Empty;
+    public DateTimeOffset StoredAt { get; set; }
+}
+
+public sealed class QuarantineItem
+{
+    public Guid Id { get; set; }
+    public Guid ImportRunId { get; set; }
+    public int? RowNumber { get; set; }
+    public string Reason { get; set; } = string.Empty;
+    public string SampleJson { get; set; } = string.Empty;
+}
+
+public sealed class PublicMarketPrice
+{
+    public Guid Id { get; set; }
+    public Guid ImportRunId { get; set; }
+    public string ProductCode { get; set; } = string.Empty;
+    public string RegionCode { get; set; } = string.Empty;
+    public DateOnly EffectiveDate { get; set; }
+    public decimal PricePerPound { get; set; }
+    public string SourceLabel { get; set; } = "Public";
+    public string DataClassification { get; set; } = "Public";
+}
+
+public sealed class PublicWeatherObservation
+{
+    public Guid Id { get; set; }
+    public Guid ImportRunId { get; set; }
+    public string RegionCode { get; set; } = string.Empty;
+    public DateOnly ObservationDate { get; set; }
+    public decimal TemperatureF { get; set; }
+    public decimal HeatStressIndex { get; set; }
+    public string SourceLabel { get; set; } = "Public";
+    public string DataClassification { get; set; } = "Public";
+}
+
+public sealed class FuelPriceObservation
+{
+    public Guid Id { get; set; }
+    public Guid ImportRunId { get; set; }
+    public string RegionCode { get; set; } = string.Empty;
+    public DateOnly EffectiveDate { get; set; }
+    public decimal PricePerGallon { get; set; }
+    public string Cadence { get; set; } = "Weekly";
+    public string SourceLabel { get; set; } = "Public";
+    public string DataClassification { get; set; } = "Public";
+}

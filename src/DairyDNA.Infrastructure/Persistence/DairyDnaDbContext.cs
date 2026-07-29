@@ -22,6 +22,13 @@ public sealed class DairyDnaDbContext : DbContext, IDairyDnaDbContext
     public DbSet<Contract> Contracts => Set<Contract>();
     public DbSet<Shipment> Shipments => Set<Shipment>();
     public DbSet<WeatherObservation> WeatherObservations => Set<WeatherObservation>();
+    public DbSet<ImportSource> ImportSources => Set<ImportSource>();
+    public DbSet<ImportRun> ImportRuns => Set<ImportRun>();
+    public DbSet<RawPayload> RawPayloads => Set<RawPayload>();
+    public DbSet<QuarantineItem> QuarantineItems => Set<QuarantineItem>();
+    public DbSet<PublicMarketPrice> PublicMarketPrices => Set<PublicMarketPrice>();
+    public DbSet<PublicWeatherObservation> PublicWeatherObservations => Set<PublicWeatherObservation>();
+    public DbSet<FuelPriceObservation> FuelPriceObservations => Set<FuelPriceObservation>();
 
     IQueryable<GenerationManifest> IDairyDnaDbContext.GenerationManifests => GenerationManifests;
     IQueryable<Farm> IDairyDnaDbContext.Farms => Farms;
@@ -37,6 +44,13 @@ public sealed class DairyDnaDbContext : DbContext, IDairyDnaDbContext
     IQueryable<Contract> IDairyDnaDbContext.Contracts => Contracts;
     IQueryable<Shipment> IDairyDnaDbContext.Shipments => Shipments;
     IQueryable<WeatherObservation> IDairyDnaDbContext.WeatherObservations => WeatherObservations;
+    IQueryable<ImportSource> IDairyDnaDbContext.ImportSources => ImportSources;
+    IQueryable<ImportRun> IDairyDnaDbContext.ImportRuns => ImportRuns;
+    IQueryable<RawPayload> IDairyDnaDbContext.RawPayloads => RawPayloads;
+    IQueryable<QuarantineItem> IDairyDnaDbContext.QuarantineItems => QuarantineItems;
+    IQueryable<PublicMarketPrice> IDairyDnaDbContext.PublicMarketPrices => PublicMarketPrices;
+    IQueryable<PublicWeatherObservation> IDairyDnaDbContext.PublicWeatherObservations => PublicWeatherObservations;
+    IQueryable<FuelPriceObservation> IDairyDnaDbContext.FuelPriceObservations => FuelPriceObservations;
 
     public new void Add<T>(T entity) where T : class => Set<T>().Add(entity);
     public void AddRange<T>(IEnumerable<T> entities) where T : class => Set<T>().AddRange(entities);
@@ -61,5 +75,20 @@ public sealed class DairyDnaDbContext : DbContext, IDairyDnaDbContext
         modelBuilder.Entity<Contract>().HasKey(x => x.Id);
         modelBuilder.Entity<Shipment>().HasKey(x => x.Id);
         modelBuilder.Entity<WeatherObservation>().HasKey(x => x.Id);
+        modelBuilder.Entity<ImportSource>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.Code).IsUnique();
+        });
+        modelBuilder.Entity<ImportRun>().HasKey(x => x.Id);
+        modelBuilder.Entity<RawPayload>().HasKey(x => x.Id);
+        modelBuilder.Entity<QuarantineItem>().HasKey(x => x.Id);
+        modelBuilder.Entity<PublicMarketPrice>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => new { x.ImportRunId, x.ProductCode, x.RegionCode, x.EffectiveDate });
+        });
+        modelBuilder.Entity<PublicWeatherObservation>().HasKey(x => x.Id);
+        modelBuilder.Entity<FuelPriceObservation>().HasKey(x => x.Id);
     }
 }

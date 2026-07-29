@@ -6,6 +6,7 @@
     <ProjectReference Include="..\DairyDNA.DataGenerator\DairyDNA.DataGenerator.csproj" />
     <ProjectReference Include="..\DairyDNA.Optimization\DairyDNA.Optimization.csproj" />
     <ProjectReference Include="..\DairyDNA.ServiceDefaults\DairyDNA.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\DairyDNA.DataIngestion\DairyDNA.DataIngestion.csproj" />
   </ItemGroup>
 
   <ItemGroup>

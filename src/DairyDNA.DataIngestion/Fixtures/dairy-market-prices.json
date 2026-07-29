@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "dairydna.public.v1",
+  "seriesKind": "DairyMarketPrice",
+  "sourceLabel": "USDA-fixture",
+  "rows": [
+    { "productCode": "RAW_MILK", "regionCode": "R1", "effectiveDate": "2025-12-01", "pricePerPound": 0.215 },
+    { "productCode": "RAW_MILK", "regionCode": "R1", "effectiveDate": "2025-12-08", "pricePerPound": 0.218 },
+    { "productCode": "RAW_MILK", "regionCode": "R1", "effectiveDate": "2025-12-15", "pricePerPound": 0.221 },
+    { "productCode": "RAW_MILK", "regionCode": "R1", "effectiveDate": "2025-12-22", "pricePerPound": 0.219 },
+    { "productCode": "RAW_MILK", "regionCode": "R1", "effectiveDate": "2025-12-29", "pricePerPound": 0.224 },
+    { "productCode": "CREAM", "regionCode": "R1", "effectiveDate": "2025-12-01", "pricePerPound": 1.02 },
+    { "productCode": "CREAM", "regionCode": "R1", "effectiveDate": "2025-12-08", "pricePerPound": 1.04 },
+    { "productCode": "CREAM", "regionCode": "R1", "effectiveDate": "2025-12-15", "pricePerPound": 1.05 },
+    { "productCode": "CREAM", "regionCode": "R1", "effectiveDate": "2025-12-22", "pricePerPound": 1.03 },
+    { "productCode": "CREAM", "regionCode": "R1", "effectiveDate": "2025-12-29", "pricePerPound": 1.06 }
+  ]
+}

@@ -2,9 +2,11 @@ using DairyDNA.Api.Endpoints;
 using DairyDNA.Application.Abstractions;
 using DairyDNA.Application.Demo;
 using DairyDNA.Application.Generation;
+using DairyDNA.Application.Ingestion;
 using DairyDNA.Application.Optimization;
 using DairyDNA.Application.Transport;
 using DairyDNA.DataGenerator;
+using DairyDNA.DataIngestion;
 using DairyDNA.Infrastructure;
 using DairyDNA.Infrastructure.Persistence;
 using DairyDNA.Optimization;
@@ -21,6 +23,7 @@ builder.Services.AddDairyDnaPersistence(connectionString, useInMemory);
 builder.Services.AddScoped<SyntheticDataGenerator>();
 builder.Services.AddScoped<ISyntheticDataGenerator>(sp => sp.GetRequiredService<SyntheticDataGenerator>());
 builder.Services.AddScoped<IThinSliceGenerator>(sp => sp.GetRequiredService<SyntheticDataGenerator>());
+builder.Services.AddScoped<IPublicDataImporter, PublicDataImporter>();
 builder.Services.AddSingleton<ITransportCostCalculator, TransportCostCalculator>();
 builder.Services.AddSingleton<IAllocationOptimizer, NaiveContributionMarginOptimizer>();
 builder.Services.AddScoped<CreateGenerationRunHandler>();
@@ -48,6 +51,8 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<DairyDnaDbContext>();
     await db.Database.EnsureCreatedAsync();
+    var importer = scope.ServiceProvider.GetRequiredService<IPublicDataImporter>();
+    await importer.EnsureSourcesSeededAsync();
 }
 
 app.MapGet("/health", () => Results.Ok(new { status = "Healthy" }));
@@ -55,6 +60,7 @@ app.MapGenerationEndpoints();
 app.MapDemoEndpoints();
 app.MapOptimizationEndpoints();
 app.MapReferenceEndpoints();
+app.MapImportEndpoints();
 
 app.Run();
 

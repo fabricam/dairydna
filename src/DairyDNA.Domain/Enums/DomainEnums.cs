@@ -72,3 +72,20 @@ public enum ShipmentStatus
     Completed = 2,
     Cancelled = 3
 }
+
+public enum ImportRunStatus
+{
+    Queued = 0,
+    Running = 1,
+    Completed = 2,
+    CompletedWithQuarantine = 3,
+    Failed = 4,
+    SkippedIdempotent = 5
+}
+
+public enum ImportSeriesKind
+{
+    DairyMarketPrice = 0,
+    Weather = 1,
+    FuelPrice = 2
+}

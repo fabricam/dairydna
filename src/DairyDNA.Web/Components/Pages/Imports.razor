@@ -1,0 +1,109 @@
+@page "/imports"
+@rendermode InteractiveServer
+@inject IHttpClientFactory HttpClientFactory
+
+<PageTitle>Public data imports</PageTitle>
+
+<div class="ui container" style="margin-top:2em;">
+    <h1 class="ui header">Public data imports
+        <div class="sub header">Fixture-driven external series — not forecasts or trading advice</div>
+    </h1>
+
+    <div class="ui warning message">
+        All imported observations are labeled <strong>Public</strong>. They are not DairyDNA forecasts or recommendations.
+    </div>
+
+    @if (_error is not null)
+    {
+        <div class="ui negative message">@_error</div>
+    }
+
+    <h3 class="ui header">Sources</h3>
+    <table class="ui celled table">
+        <thead><tr><th>Code</th><th>Name</th><th>Kind</th><th></th></tr></thead>
+        <tbody>
+        @foreach (var s in _sources)
+        {
+            <tr>
+                <td>@s.code</td>
+                <td>@s.displayName</td>
+                <td><div class="ui teal label">Public</div> @s.seriesKind</td>
+                <td>
+                    <button class="ui mini primary button" disabled="@_busy" @onclick="() => ImportAsync(s.code)">Import fixture</button>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+
+    @if (_lastRun is not null)
+    {
+        <div class="ui segment">
+            <p><strong>Last run:</strong> @_lastRun.id</p>
+            <p>Status @_lastRun.status · Canonical @_lastRun.canonicalRowCount · Quarantine @_lastRun.quarantineCount · Classification @_lastRun.dataClassification</p>
+            <p class="ui tiny label">@_lastRun.disclaimer</p>
+        </div>
+    }
+
+    <h3 class="ui header">Recent runs</h3>
+    <table class="ui celled compact table">
+        <thead><tr><th>Source</th><th>Status</th><th>Rows</th><th>Checksum</th></tr></thead>
+        <tbody>
+        @foreach (var r in _runs)
+        {
+            <tr>
+                <td>@r.sourceCode</td>
+                <td>@r.status</td>
+                <td>@r.canonicalRowCount / Q @r.quarantineCount</td>
+                <td style="font-size:0.75em;">@(r.payloadChecksumSha256 is { Length: > 12 } ? r.payloadChecksumSha256[..12] + "…" : r.payloadChecksumSha256)</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    private List<SourceDto> _sources = [];
+    private List<RunDto> _runs = [];
+    private RunDto? _lastRun;
+    private string? _error;
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync() => await ReloadAsync();
+
+    private async Task ReloadAsync()
+    {
+        var client = HttpClientFactory.CreateClient("DairyDNA.Api");
+        _sources = await client.GetFromJsonAsync<List<SourceDto>>("api/import-sources") ?? [];
+        _runs = await client.GetFromJsonAsync<List<RunDto>>("api/import-runs") ?? [];
+    }
+
+    private async Task ImportAsync(string sourceCode)
+    {
+        _busy = true;
+        _error = null;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("DairyDNA.Api");
+            var response = await client.PostAsJsonAsync("api/import-runs", new { sourceCode });
+            if (!response.IsSuccessStatusCode)
+            {
+                _error = await response.Content.ReadAsStringAsync();
+                return;
+            }
+            _lastRun = await response.Content.ReadFromJsonAsync<RunDto>();
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private sealed record SourceDto(string code, string displayName, string seriesKind);
+    private sealed record RunDto(Guid id, string sourceCode, string status, int canonicalRowCount, int quarantineCount, string dataClassification, string? payloadChecksumSha256, string? disclaimer);
+}

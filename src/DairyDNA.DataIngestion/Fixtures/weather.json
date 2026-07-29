@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "dairydna.public.v1",
+  "seriesKind": "Weather",
+  "sourceLabel": "NOAA-fixture",
+  "rows": [
+    { "regionCode": "R1", "observationDate": "2025-12-25", "temperatureF": 28.0, "heatStressIndex": 0.0 },
+    { "regionCode": "R1", "observationDate": "2025-12-26", "temperatureF": 31.0, "heatStressIndex": 0.0 },
+    { "regionCode": "R1", "observationDate": "2025-12-27", "temperatureF": 34.0, "heatStressIndex": 0.1 },
+    { "regionCode": "R1", "observationDate": "2025-12-28", "temperatureF": 36.0, "heatStressIndex": 0.1 },
+    { "regionCode": "R1", "observationDate": "2025-12-29", "temperatureF": 38.0, "heatStressIndex": 0.2 },
+    { "regionCode": "R2", "observationDate": "2025-12-25", "temperatureF": 42.0, "heatStressIndex": 0.3 },
+    { "regionCode": "R2", "observationDate": "2025-12-26", "temperatureF": 45.0, "heatStressIndex": 0.4 },
+    { "regionCode": "R2", "observationDate": "2025-12-27", "temperatureF": 48.0, "heatStressIndex": 0.5 },
+    { "regionCode": "R2", "observationDate": "2025-12-28", "temperatureF": 50.0, "heatStressIndex": 0.6 },
+    { "regionCode": "R2", "observationDate": "2025-12-29", "temperatureF": 52.0, "heatStressIndex": 0.7 }
+  ]
+}

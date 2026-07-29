@@ -1,6 +1,6 @@
 {
-  "feature_directory": "specs/002-synthetic-data-generator",
-  "feature_number": "002",
-  "feature_name": "synthetic-data-generator",
+  "feature_directory": "specs/003-public-data-ingestion",
+  "feature_number": "003",
+  "feature_name": "public-data-ingestion",
   "updated": "2026-07-28"
 }

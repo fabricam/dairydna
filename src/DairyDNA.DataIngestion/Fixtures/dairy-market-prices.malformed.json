@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "dairydna.public.v1",
+  "seriesKind": "DairyMarketPrice",
+  "sourceLabel": "bad-fixture",
+  "rows": [
+    { "productCode": "", "regionCode": "R1", "effectiveDate": "not-a-date", "pricePerPound": -1 }
+  ]
+}
