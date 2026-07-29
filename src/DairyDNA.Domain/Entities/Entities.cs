@@ -21,6 +21,19 @@ public sealed class GenerationManifest
     public bool IsSynthetic { get; set; } = true;
     public string? FailureMessage { get; set; }
     public string EntityCountsJson { get; set; } = "{}";
+    public string GeneratorVersion { get; set; } = "synthetic-gen-v2";
+    public string ProfileName { get; set; } = "thin-slice";
+    public string ValidationReportJson { get; set; } = "{}";
+}
+
+public sealed class WeatherObservation
+{
+    public Guid Id { get; set; }
+    public Guid GenerationId { get; set; }
+    public string RegionCode { get; set; } = string.Empty;
+    public DateOnly ObservationDate { get; set; }
+    public decimal TemperatureF { get; set; }
+    public decimal HeatStressIndex { get; set; }
 }
 
 public sealed class Farm

@@ -1,17 +1,21 @@
 using DairyDNA.Application.Abstractions;
 using DairyDNA.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace DairyDNA.Application.Generation;
 
 public sealed class CreateGenerationRunHandler
 {
-    private readonly IThinSliceGenerator _generator;
+    private readonly ISyntheticDataGenerator _generator;
 
-    public CreateGenerationRunHandler(IThinSliceGenerator generator) => _generator = generator;
+    public CreateGenerationRunHandler(ISyntheticDataGenerator generator) => _generator = generator;
+
+    public Task<GenerationManifest> HandleAsync(SyntheticGenerationRequest request, CancellationToken ct = default)
+        => _generator.GenerateAsync(request, ct);
 
     public Task<GenerationManifest> HandleAsync(ThinSliceGenerationRequest request, CancellationToken ct = default)
-        => _generator.GenerateAsync(request, ct);
+        => _generator.GenerateAsync(request.ToSynthetic(), ct);
 }
 
 public sealed class GetGenerationRunHandler
@@ -32,4 +36,18 @@ public sealed class ListGenerationRunsHandler
 
     public async Task<IReadOnlyList<GenerationManifest>> HandleAsync(CancellationToken ct = default)
         => await _db.GenerationManifests.OrderByDescending(x => x.GeneratedAt).ToListAsync(ct);
+}
+
+public sealed class GetValidationReportHandler
+{
+    private readonly IDairyDnaDbContext _db;
+
+    public GetValidationReportHandler(IDairyDnaDbContext db) => _db = db;
+
+    public async Task<ValidationReport?> HandleAsync(Guid generationId, CancellationToken ct = default)
+    {
+        var gen = await _db.GenerationManifests.FirstOrDefaultAsync(x => x.Id == generationId, ct);
+        if (gen is null) return null;
+        return JsonSerializer.Deserialize<ValidationReport>(gen.ValidationReportJson) ?? new ValidationReport { Passed = false };
+    }
 }

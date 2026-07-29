@@ -18,28 +18,11 @@ public interface IDairyDnaDbContext
     IQueryable<RecommendedMovement> RecommendedMovements { get; }
     IQueryable<Contract> Contracts { get; }
     IQueryable<Shipment> Shipments { get; }
+    IQueryable<WeatherObservation> WeatherObservations { get; }
 
     void Add<T>(T entity) where T : class;
     void AddRange<T>(IEnumerable<T> entities) where T : class;
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
-}
-
-public sealed class ThinSliceGenerationRequest
-{
-    public string ScenarioName { get; set; } = "thin-vertical-slice";
-    public string SchemaVersion { get; set; } = "dairydna.thin-slice.v1";
-    public int RandomSeed { get; set; } = 104729;
-    public DateOnly StartDate { get; set; } = new(2025, 10, 1);
-    public DateOnly EndDate { get; set; } = new(2025, 12, 29);
-    public int FarmCount { get; set; } = 5;
-    public int FacilityCount { get; set; } = 2;
-    public int CustomerCount { get; set; } = 5;
-    public int TruckCount { get; set; } = 3;
-}
-
-public interface IThinSliceGenerator
-{
-    Task<GenerationManifest> GenerateAsync(ThinSliceGenerationRequest request, CancellationToken cancellationToken = default);
 }
 
 public sealed class TransportCostBreakdown

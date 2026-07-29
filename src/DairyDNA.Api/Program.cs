@@ -18,12 +18,15 @@ var useInMemory = builder.Configuration.GetValue("UseInMemoryDatabase", false)
                   || string.IsNullOrWhiteSpace(connectionString);
 
 builder.Services.AddDairyDnaPersistence(connectionString, useInMemory);
-builder.Services.AddScoped<IThinSliceGenerator, ThinSliceGenerator>();
+builder.Services.AddScoped<SyntheticDataGenerator>();
+builder.Services.AddScoped<ISyntheticDataGenerator>(sp => sp.GetRequiredService<SyntheticDataGenerator>());
+builder.Services.AddScoped<IThinSliceGenerator>(sp => sp.GetRequiredService<SyntheticDataGenerator>());
 builder.Services.AddSingleton<ITransportCostCalculator, TransportCostCalculator>();
 builder.Services.AddSingleton<IAllocationOptimizer, NaiveContributionMarginOptimizer>();
 builder.Services.AddScoped<CreateGenerationRunHandler>();
 builder.Services.AddScoped<GetGenerationRunHandler>();
 builder.Services.AddScoped<ListGenerationRunsHandler>();
+builder.Services.AddScoped<GetValidationReportHandler>();
 builder.Services.AddScoped<GetDemoSummaryHandler>();
 builder.Services.AddScoped<CreateOptimizationRunHandler>();
 builder.Services.AddScoped<GetOptimizationRunHandler>();

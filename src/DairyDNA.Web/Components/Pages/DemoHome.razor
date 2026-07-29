@@ -7,20 +7,47 @@
 @inject IState<GenerationState> GenerationState
 @inject IState<DemoState> DemoState
 @inject IState<OptimizationState> OptimizationState
+@inject IHttpClientFactory HttpClientFactory
 
-<PageTitle>DairyDNA Thin Slice</PageTitle>
+<PageTitle>DairyDNA Demo</PageTitle>
 
 <div class="ui container" style="margin-top:2em;">
-    <h1 class="ui header">DairyDNA <div class="sub header">Thin vertical slice demo (synthetic data)</div></h1>
+    <h1 class="ui header">DairyDNA <div class="sub header">Synthetic data generation &amp; allocation demo</div></h1>
 
     <div class="ui warning message">
         Local-dev demonstration only. Unauthenticated. Not production-secure. Recommendations are not market advice.
     </div>
 
-    <button type="button" class="ui primary button @(GenerationState.Value.Loading ? "loading" : null)"
-            disabled="@GenerationState.Value.Loading" @onclick="GenerateAsync">
-        @(GenerationState.Value.Loading ? "Generating..." : "Generate thin-slice data")
-    </button>
+    <div class="ui form segment">
+        <h3 class="ui dividing header">Generation profile</h3>
+        <div class="inline fields">
+            <div class="field">
+                <label>Profile</label>
+                <select class="ui dropdown" @bind="_profileName">
+                    <option value="thin-slice">thin-slice (5/2/5/3, milk+cream, ~90d)</option>
+                    <option value="standard-demo">standard-demo (150/8/75/30, 6 products, ~3y)</option>
+                    <option value="custom">custom (override counts)</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Seed</label>
+                <input type="number" @bind="_seed" style="width:8em;" />
+            </div>
+        </div>
+        @if (_profileName == "custom")
+        {
+            <div class="inline fields">
+                <div class="field"><label>Farms</label><input type="number" @bind="_farmCount" style="width:6em;" /></div>
+                <div class="field"><label>Facilities</label><input type="number" @bind="_facilityCount" style="width:6em;" /></div>
+                <div class="field"><label>Customers</label><input type="number" @bind="_customerCount" style="width:6em;" /></div>
+                <div class="field"><label>Trucks</label><input type="number" @bind="_truckCount" style="width:6em;" /></div>
+            </div>
+        }
+        <button type="button" class="ui primary button @(GenerationState.Value.Loading ? "loading" : null)"
+                disabled="@GenerationState.Value.Loading" @onclick="GenerateAsync">
+            @(GenerationState.Value.Loading ? "Generating..." : "Generate synthetic data")
+        </button>
+    </div>
 
     @if (GenerationState.Value.Error is not null)
     {
@@ -31,10 +58,27 @@
     {
         <div class="ui segment">
             <p><strong>Generation:</strong> @gid</p>
-            <p><strong>Seed:</strong> @GenerationState.Value.RandomSeed · <strong>Schema:</strong> dairydna.thin-slice.v1 · <strong>Status:</strong> @GenerationState.Value.Status · <strong>Planning date:</strong> @GenerationState.Value.PlanningDate</p>
+            <p>
+                <strong>Profile:</strong> @(GenerationState.Value.ProfileName ?? "—") ·
+                <strong>Seed:</strong> @GenerationState.Value.RandomSeed ·
+                <strong>Status:</strong> @GenerationState.Value.Status ·
+                <strong>Planning date:</strong> @GenerationState.Value.PlanningDate
+            </p>
             <button class="ui button" disabled="@DemoState.Value.Loading" @onclick="() => LoadSummary(gid)">Load demo summary</button>
             <button class="ui teal button" disabled="@OptimizationState.Value.Loading" @onclick="() => Optimize(gid)">Run optimization</button>
             <a class="ui button" href="/recommendations">View recommendations</a>
+            @if (_validationReport is not null)
+            {
+                <div class="ui @( _validationReport.passed ? "positive" : "negative") message" style="margin-top:1em;">
+                    Validation: @(_validationReport.passed ? "Passed" : "Failed") ·
+                    missingness @(_validationReport.observedMissingnessRate.ToString("P1")) ·
+                    seasonal @(_validationReport.seasonalVariationDetected ? "detected" : "not detected")
+                </div>
+            }
+            else
+            {
+                <button class="ui basic button" @onclick="() => LoadValidation(gid)">Load validation report</button>
+            }
         </div>
     }
 
@@ -84,14 +128,37 @@
 </div>
 
 @code {
+    private string _profileName = "thin-slice";
+    private int _seed = 104729;
+    private int _farmCount = 5;
+    private int _facilityCount = 2;
+    private int _customerCount = 5;
+    private int _truckCount = 3;
+    private ValidationReportDto? _validationReport;
+
     private Task GenerateAsync()
     {
-        Dispatcher.Dispatch(new GenerateThinSliceAction(104729));
+        _validationReport = null;
+        if (_profileName == "custom")
+        {
+            Dispatcher.Dispatch(new GenerateSyntheticAction(
+                "custom", _seed, _farmCount, _facilityCount, _customerCount, _truckCount));
+        }
+        else
+        {
+            Dispatcher.Dispatch(new GenerateSyntheticAction(_profileName, _seed));
+        }
         return Task.CompletedTask;
     }
 
     private void LoadSummary(Guid id) => Dispatcher.Dispatch(new LoadDemoSummaryAction(id));
     private void Optimize(Guid id) => Dispatcher.Dispatch(new RunOptimizationAction(id));
+
+    private async Task LoadValidation(Guid id)
+    {
+        var client = HttpClientFactory.CreateClient("DairyDNA.Api");
+        _validationReport = await client.GetFromJsonAsync<ValidationReportDto>($"api/generation-runs/{id}/validation-report");
+    }
 
     private static List<NetworkMap.NetworkPointVm> ToMapPoints(List<NetworkPointDto> network) =>
         network.Select(p => new NetworkMap.NetworkPointVm(p.id, p.kind, p.name, p.latitude, p.longitude)).ToList();
@@ -103,4 +170,6 @@
         var customers = network.Count(p => p.kind.Equals("Customer", StringComparison.OrdinalIgnoreCase));
         return $"Network map shows {farms} farms, {facilities} facilities, and {customers} customers plotted by latitude and longitude (schematic, synthetic data).";
     }
+
+    private sealed record ValidationReportDto(bool passed, decimal observedMissingnessRate, bool seasonalVariationDetected);
 }

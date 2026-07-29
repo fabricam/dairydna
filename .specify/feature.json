@@ -1,6 +1,6 @@
 {
-  "feature_directory": "specs/001-foundation-and-domain",
-  "feature_number": "001",
-  "feature_name": "foundation-and-domain",
+  "feature_directory": "specs/002-synthetic-data-generator",
+  "feature_number": "002",
+  "feature_name": "synthetic-data-generator",
   "updated": "2026-07-28"
 }

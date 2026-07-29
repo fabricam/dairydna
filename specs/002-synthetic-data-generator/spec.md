@@ -2,7 +2,7 @@
 
 **Feature Branch**: `002-synthetic-data-generator`  
 **Created**: 2026-07-26  
-**Status**: Draft — ready for `/speckit-clarify` → `/speckit-plan`  
+**Status**: Implemented  
 **Product**: DairyDNA  
 **Input**: Program plan §8 / §10 Feature 002  
 **Depends on**: 001 (domain entities & invariants); may extend generator from 000
