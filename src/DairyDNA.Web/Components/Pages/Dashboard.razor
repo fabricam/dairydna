@@ -1,0 +1,217 @@
+@page "/dashboard"
+@rendermode InteractiveServer
+@inherits Fluxor.Blazor.Web.Components.FluxorComponent
+@using DairyDNA.Web.Components.Visuals
+@using DairyDNA.Web.Store.Dashboard
+@inject IDispatcher Dispatcher
+@inject IState<DashboardState> Dash
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager Nav
+
+<PageTitle>Ops dashboard</PageTitle>
+
+<div class="ui container" style="margin-top:2em;">
+    <h1 class="ui header">Operational dashboard
+        <div class="sub header">Network posture for a selected synthetic dataset</div>
+    </h1>
+
+    <div class="ui form segment">
+        <div class="inline fields">
+            <div class="field">
+                <label>Generation id</label>
+                <input type="text" @bind="_generationText" style="width:22em;" placeholder="Paste generation GUID" />
+            </div>
+            <div class="field">
+                <label>As-of (optional)</label>
+                <input type="date" @bind="_asOf" />
+            </div>
+            <div class="field">
+                <div class="ui checkbox">
+                    <input type="checkbox" @bind="_includeInactive" id="inc-inactive" />
+                    <label for="inc-inactive">Include inactive</label>
+                </div>
+            </div>
+            <button type="button" class="ui primary button @(Dash.Value.Loading ? "loading" : null)"
+                    disabled="@Dash.Value.Loading" @onclick="LoadAsync">Load</button>
+        </div>
+        @if (_generations.Count > 0)
+        {
+            <div class="field">
+                <label>Recent generations</label>
+                <select class="ui dropdown" @onchange="OnPickGeneration">
+                    <option value="">Select…</option>
+                    @foreach (var g in _generations)
+                    {
+                        <option value="@g.id">@g.profileName · @g.id · @g.planningDate</option>
+                    }
+                </select>
+            </div>
+        }
+    </div>
+
+    @if (Dash.Value.Error is not null)
+    {
+        <div class="ui negative message" role="alert">@Dash.Value.Error</div>
+    }
+    else if (Dash.Value.Model is null && !Dash.Value.Loading)
+    {
+        <div class="ui info message">
+            Select or paste a generation id, or <a href="/">generate a dataset</a> first. Dashboard does not invent zero stock.
+        </div>
+    }
+
+    @if (Dash.Value.Model is { } m)
+    {
+        <div class="ui labels" style="margin-bottom:1em;">
+            <div class="ui teal label">@m.dataClassification</div>
+            <div class="ui label">As-of @m.asOfDate</div>
+            <div class="ui label">Range @m.datasetStart – @m.datasetEnd</div>
+        </div>
+        @if (m.warning is not null)
+        {
+            <div class="ui warning message">@m.warning</div>
+        }
+
+        <h2 class="ui header">Network map <div class="ui teal label">@m.dataClassification</div></h2>
+        <div class="ui segment dd-visual-panel">
+            <NetworkMap Points="ToMapPoints(m.network)"
+                        AriaLabel="Operational network map"
+                        TextAlternative="@MapAlt(m)" />
+            <div class="dd-map-legend">
+                <span class="dd-legend-farm">■ Farm</span>
+                <span class="dd-legend-facility">■ Facility</span>
+                <span class="dd-legend-customer">■ Customer</span>
+            </div>
+            <p>Select a facility:</p>
+            <div class="ui horizontal list">
+                @foreach (var f in m.network.Where(n => n.kind == "Facility"))
+                {
+                    <a class="item" href="@FacilityHref(f.id, m)">@f.name</a>
+                }
+            </div>
+        </div>
+
+        <h2 class="ui header">Inventory age / risk <div class="ui teal label">@m.dataClassification</div></h2>
+        <div class="ui segment dd-visual-panel">
+            <InventoryAgeChart Buckets="m.inventoryAgeRisk.Select(b => new InventoryAgeChart.BucketVm(b.band, b.lotCount, b.quantityPounds, b.riskLevel)).ToList()"
+                               TextAlternative="@AgeAlt(m)" />
+        </div>
+
+        <h2 class="ui header">Prices <div class="ui teal label">Synthetic</div>
+            @if (m.priceSeries.Any(p => p.classification == "Public"))
+            {
+                <div class="ui blue label">Public</div>
+            }
+        </h2>
+        <div class="ui segment dd-visual-panel">
+            <PriceSparkline Points="m.priceSeries.Select(p => new PriceSparkline.PriceVm(p.date, p.productCode, p.pricePerPound, p.classification)).ToList()"
+                            ProductCode="RAW_MILK"
+                            AriaLabel="Raw milk price series"
+                            TextAlternative="Raw milk price sparkline with Synthetic and Public series where available." />
+            <p class="ui tiny message">Public prices are external observations — not DairyDNA forecasts or trading advice.</p>
+        </div>
+
+        <div class="ui three columns grid">
+            <div class="column">
+                <h3 class="ui header">Inventory <div class="ui teal label">@m.dataClassification</div></h3>
+                <table class="ui celled compact table">
+                    <thead><tr><th>Facility</th><th>Product</th><th>Qty</th><th>Days to expiry</th></tr></thead>
+                    <tbody>
+                    @foreach (var row in m.inventory.Take(20))
+                    {
+                        <tr>
+                            <td><a href="@FacilityHref(row.facilityId, m)">@row.facilityName</a></td>
+                            <td>@row.productCode</td>
+                            <td>@row.quantityPounds.ToString("N0")</td>
+                            <td>@(row.daysToExpiry?.ToString() ?? "—")</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+            <div class="column">
+                <h3 class="ui header">Open demand <div class="ui teal label">@m.dataClassification</div></h3>
+                <table class="ui celled compact table">
+                    <thead><tr><th>Customer</th><th>Product</th><th>Qty</th></tr></thead>
+                    <tbody>
+                    @foreach (var row in m.demand.Take(20))
+                    {
+                        <tr><td>@row.customerName</td><td>@row.productCode</td><td>@row.requestedQuantityPounds.ToString("N0")</td></tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+            <div class="column">
+                <h3 class="ui header">Fleet <div class="ui teal label">@m.dataClassification</div></h3>
+                <table class="ui celled compact table">
+                    <thead><tr><th>Truck</th><th>Capacity</th><th>Status</th></tr></thead>
+                    <tbody>
+                    @foreach (var row in m.fleet)
+                    {
+                        <tr><td>@row.truckId.ToString()[..8]…</td><td>@row.maximumCapacityPounds.ToString("N0")</td><td>@row.status</td></tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private string _generationText = "";
+    private DateTime? _asOf;
+    private bool _includeInactive;
+    private List<GenDto> _generations = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        try
+        {
+            var client = HttpClientFactory.CreateClient("DairyDNA.Api");
+            _generations = await client.GetFromJsonAsync<List<GenDto>>("api/generation-runs") ?? [];
+            if (_generations.Count > 0 && string.IsNullOrWhiteSpace(_generationText))
+                _generationText = _generations[0].id.ToString();
+        }
+        catch { /* empty list OK */ }
+    }
+
+    private void OnPickGeneration(ChangeEventArgs e)
+    {
+        if (e.Value is string s && Guid.TryParse(s, out _))
+            _generationText = s;
+    }
+
+    private Task LoadAsync()
+    {
+        if (!Guid.TryParse(_generationText, out var id))
+        {
+            Dispatcher.Dispatch(new DashboardFailedAction("Enter a valid generation GUID."));
+            return Task.CompletedTask;
+        }
+        DateOnly? asOf = _asOf is DateTime dt ? DateOnly.FromDateTime(dt) : null;
+        Dispatcher.Dispatch(new LoadDashboardAction(id, asOf, _includeInactive));
+        return Task.CompletedTask;
+    }
+
+    private string FacilityHref(Guid facilityId, DashboardDto m)
+    {
+        var url = $"/dashboard/facility/{facilityId}?generationId={m.generationId}&asOfDate={m.asOfDate:yyyy-MM-dd}";
+        return url;
+    }
+
+    private static List<NetworkMap.NetworkPointVm> ToMapPoints(List<NetRow> network) =>
+        network.Select(p => new NetworkMap.NetworkPointVm(p.id, p.kind, p.name, p.latitude, p.longitude)).ToList();
+
+    private static string MapAlt(DashboardDto m)
+    {
+        var f = m.network.Count(n => n.kind == "Facility");
+        var c = m.network.Count(n => n.kind == "Customer");
+        return $"Network map with {f} facilities and {c} customers ({m.dataClassification}).";
+    }
+
+    private static string AgeAlt(DashboardDto m) =>
+        string.Join("; ", m.inventoryAgeRisk.Select(b => $"{b.band}: {b.lotCount} lots, risk {b.riskLevel}"));
+
+    private sealed record GenDto(Guid id, string? profileName, string? planningDate);
+}

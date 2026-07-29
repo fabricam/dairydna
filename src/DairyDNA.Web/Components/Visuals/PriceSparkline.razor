@@ -1,0 +1,67 @@
+@namespace DairyDNA.Web.Components.Visuals
+
+@((MarkupString)SvgMarkup)
+<p class="dd-visual-alt">@TextAlternative</p>
+<table class="ui very compact celled table">
+    <thead><tr><th>Date</th><th>Product</th><th>Price/lb</th><th>Class</th></tr></thead>
+    <tbody>
+    @foreach (var p in Points.TakeLast(20))
+    {
+        <tr><td>@p.Date</td><td>@p.ProductCode</td><td>@p.PricePerPound</td><td>@p.Classification</td></tr>
+    }
+    </tbody>
+</table>
+
+@code {
+    public sealed record PriceVm(DateOnly Date, string ProductCode, decimal PricePerPound, string Classification);
+
+    [Parameter] public IReadOnlyList<PriceVm> Points { get; set; } = [];
+    [Parameter] public string ProductCode { get; set; } = "RAW_MILK";
+    [Parameter] public string AriaLabel { get; set; } = "Price time series";
+    [Parameter] public string TextAlternative { get; set; } = string.Empty;
+    [Parameter] public int Width { get; set; } = 640;
+    [Parameter] public int Height { get; set; } = 180;
+
+    private string SvgMarkup { get; set; } = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        var series = Points.Where(p => p.ProductCode.Equals(ProductCode, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(p => p.Date).ToList();
+        var sb = new System.Text.StringBuilder();
+        sb.Append($"<svg class=\"dd-price-chart\" viewBox=\"0 0 {Width} {Height}\" role=\"img\" aria-label=\"{System.Net.WebUtility.HtmlEncode(AriaLabel)}\">");
+        sb.Append($"<title>{System.Net.WebUtility.HtmlEncode(AriaLabel)}</title>");
+        sb.Append($"<rect width=\"{Width}\" height=\"{Height}\" class=\"dd-chart-bg\" />");
+        if (series.Count < 2)
+        {
+            sb.Append($"<text x=\"{Width / 2}\" y=\"{Height / 2}\" text-anchor=\"middle\" class=\"dd-chart-empty\">Insufficient price points</text>");
+            sb.Append("</svg>");
+            SvgMarkup = sb.ToString();
+            return;
+        }
+
+        var min = series.Min(p => p.PricePerPound);
+        var max = series.Max(p => p.PricePerPound);
+        if (max <= min) max = min + 0.01m;
+        string PathFor(Func<PriceVm, bool> pred, string css)
+        {
+            var pts = series.Where(pred).ToList();
+            if (pts.Count < 2) return "";
+            var parts = new List<string>();
+            for (var i = 0; i < pts.Count; i++)
+            {
+                var idx = series.IndexOf(pts[i]);
+                var x = 30 + idx * (Width - 50.0) / Math.Max(1, series.Count - 1);
+                var y = Height - 25 - (double)((pts[i].PricePerPound - min) / (max - min)) * (Height - 50);
+                parts.Add($"{(i == 0 ? "M" : "L")}{x:0.##},{y:0.##}");
+            }
+            return $"<path d=\"{string.Join(" ", parts)}\" class=\"{css}\" fill=\"none\" />";
+        }
+
+        sb.Append(PathFor(p => p.Classification.Equals("Synthetic", StringComparison.OrdinalIgnoreCase), "dd-price-synthetic"));
+        sb.Append(PathFor(p => p.Classification.Equals("Public", StringComparison.OrdinalIgnoreCase), "dd-price-public"));
+        sb.Append($"<text x=\"12\" y=\"16\" class=\"dd-chart-label\">{System.Net.WebUtility.HtmlEncode(ProductCode)}</text>");
+        sb.Append("</svg>");
+        SvgMarkup = sb.ToString();
+    }
+}

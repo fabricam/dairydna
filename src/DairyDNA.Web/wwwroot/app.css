@@ -114,3 +114,27 @@ h1:focus {
 .dd-legend-farm { color: #7a5c29; font-weight: 600; }
 .dd-legend-customer { color: #2a9d8f; font-weight: 600; }
 .dd-legend-arc { color: #e76f51; font-weight: 600; }
+
+.dd-age-chart,
+.dd-price-chart {
+    width: 100%;
+    max-width: 720px;
+    height: auto;
+    display: block;
+}
+
+.dd-age-critical { fill: #9b2226; }
+.dd-age-high { fill: #ca6702; }
+.dd-age-moderate { fill: #ee9b00; }
+.dd-age-lower { fill: #0a9396; }
+
+.dd-price-synthetic {
+    stroke: #1f4e79;
+    stroke-width: 2.5;
+}
+
+.dd-price-public {
+    stroke: #0077b6;
+    stroke-width: 2.5;
+    stroke-dasharray: 5 3;
+}

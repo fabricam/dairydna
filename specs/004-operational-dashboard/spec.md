@@ -2,7 +2,7 @@
 
 **Feature Branch**: `004-operational-dashboard`  
 **Created**: 2026-07-26  
-**Status**: Draft — ready for `/speckit-clarify` → `/speckit-plan`  
+**Status**: Implemented  
 **Product**: DairyDNA  
 **Input**: Program plan §6 / §10 / §17 Feature 004  
 **Depends on**: 001–002 (network + generated ops data); may show 000 thin-slice panels as interim  

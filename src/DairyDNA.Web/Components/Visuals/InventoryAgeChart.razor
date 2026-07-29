@@ -1,0 +1,62 @@
+@namespace DairyDNA.Web.Components.Visuals
+
+@((MarkupString)SvgMarkup)
+<p class="dd-visual-alt">@TextAlternative</p>
+<table class="ui very compact celled table">
+    <thead><tr><th>Age band</th><th>Lots</th><th>Qty (lb)</th><th>Risk</th></tr></thead>
+    <tbody>
+    @foreach (var b in Buckets)
+    {
+        <tr><td>@b.Band</td><td>@b.LotCount</td><td>@b.QuantityPounds.ToString("N0")</td><td>@b.RiskLevel</td></tr>
+    }
+    </tbody>
+</table>
+
+@code {
+    public sealed record BucketVm(string Band, int LotCount, decimal QuantityPounds, string RiskLevel);
+
+    [Parameter] public IReadOnlyList<BucketVm> Buckets { get; set; } = [];
+    [Parameter] public string AriaLabel { get; set; } = "Inventory age and spoilage risk chart";
+    [Parameter] public string TextAlternative { get; set; } = string.Empty;
+    [Parameter] public int Width { get; set; } = 640;
+    [Parameter] public int Height { get; set; } = 220;
+
+    private string SvgMarkup { get; set; } = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.Append($"<svg class=\"dd-age-chart\" viewBox=\"0 0 {Width} {Height}\" role=\"img\" aria-label=\"{System.Net.WebUtility.HtmlEncode(AriaLabel)}\">");
+        sb.Append($"<title>{System.Net.WebUtility.HtmlEncode(AriaLabel)}</title>");
+        sb.Append($"<rect width=\"{Width}\" height=\"{Height}\" class=\"dd-chart-bg\" />");
+        if (Buckets.Count == 0)
+        {
+            sb.Append($"<text x=\"{Width / 2}\" y=\"{Height / 2}\" text-anchor=\"middle\" class=\"dd-chart-empty\">No inventory lots</text>");
+            sb.Append("</svg>");
+            SvgMarkup = sb.ToString();
+            return;
+        }
+
+        var max = Math.Max(1m, Buckets.Max(b => b.QuantityPounds));
+        var barW = (Width - 80.0) / Buckets.Count;
+        for (var i = 0; i < Buckets.Count; i++)
+        {
+            var b = Buckets[i];
+            var h = (double)(b.QuantityPounds / max) * (Height - 60);
+            var x = 40 + i * barW + 8;
+            var y = Height - 30 - h;
+            var css = b.RiskLevel switch
+            {
+                "Critical" => "dd-age-critical",
+                "High" => "dd-age-high",
+                "Moderate" => "dd-age-moderate",
+                _ => "dd-age-lower"
+            };
+            sb.Append($"<rect x=\"{x:0.##}\" y=\"{y:0.##}\" width=\"{barW - 16:0.##}\" height=\"{h:0.##}\" class=\"{css}\" />");
+            sb.Append($"<text x=\"{x + (barW - 16) / 2:0.##}\" y=\"{Height - 12}\" text-anchor=\"middle\" class=\"dd-chart-label\">{System.Net.WebUtility.HtmlEncode(b.Band)}</text>");
+            sb.Append($"<text x=\"{x + (barW - 16) / 2:0.##}\" y=\"{y - 4:0.##}\" text-anchor=\"middle\" class=\"dd-chart-label\">{b.LotCount} lots</text>");
+        }
+        sb.Append("</svg>");
+        SvgMarkup = sb.ToString();
+    }
+}

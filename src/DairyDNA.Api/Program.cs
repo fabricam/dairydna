@@ -31,6 +31,7 @@ builder.Services.AddScoped<GetGenerationRunHandler>();
 builder.Services.AddScoped<ListGenerationRunsHandler>();
 builder.Services.AddScoped<GetValidationReportHandler>();
 builder.Services.AddScoped<GetDemoSummaryHandler>();
+builder.Services.AddScoped<DairyDNA.Application.Dashboard.GetDashboardHandler>();
 builder.Services.AddScoped<CreateOptimizationRunHandler>();
 builder.Services.AddScoped<GetOptimizationRunHandler>();
 builder.Services.AddScoped<DairyDNA.Application.Reference.ReferenceDataHandlers>();
@@ -58,6 +59,7 @@ using (var scope = app.Services.CreateScope())
 app.MapGet("/health", () => Results.Ok(new { status = "Healthy" }));
 app.MapGenerationEndpoints();
 app.MapDemoEndpoints();
+app.MapDashboardEndpoints();
 app.MapOptimizationEndpoints();
 app.MapReferenceEndpoints();
 app.MapImportEndpoints();

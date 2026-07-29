@@ -1,0 +1,85 @@
+@page "/dashboard/facility/{FacilityId:guid}"
+@rendermode InteractiveServer
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager Nav
+
+<PageTitle>Facility detail</PageTitle>
+
+<div class="ui container" style="margin-top:2em;">
+    <a class="ui button" href="@BackHref">← Back to dashboard</a>
+
+    @if (_error is not null)
+    {
+        <div class="ui negative message">@_error</div>
+    }
+    else if (_detail is null)
+    {
+        <div class="ui active inline loader"></div>
+    }
+    else
+    {
+        <h1 class="ui header">@_detail.name
+            <div class="sub header">@_detail.facilityType · @_detail.regionCode · <div class="ui teal label">@_detail.dataClassification</div></div>
+        </h1>
+        <div class="ui segment">
+            <p>Lat @_detail.latitude · Lon @_detail.longitude · Active @_detail.active</p>
+            <p>Milk capacity @_detail.milkStorageCapacityPounds.ToString("N0") lb · Cream @_detail.creamStorageCapacityPounds.ToString("N0") lb</p>
+        </div>
+        <h3 class="ui header">Inventory at as-of <div class="ui teal label">@_detail.dataClassification</div></h3>
+        <table class="ui celled table">
+            <thead><tr><th>Product</th><th>Qty</th><th>Days to expiry</th></tr></thead>
+            <tbody>
+            @foreach (var row in _detail.inventory)
+            {
+                <tr><td>@row.productCode</td><td>@row.quantityPounds.ToString("N0")</td><td>@(row.daysToExpiry?.ToString() ?? "—")</td></tr>
+            }
+            </tbody>
+        </table>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid FacilityId { get; set; }
+    [SupplyParameterFromQuery] public Guid GenerationId { get; set; }
+    [SupplyParameterFromQuery] public string? AsOfDate { get; set; }
+
+    private FacilityDto? _detail;
+    private string? _error;
+
+    private string BackHref =>
+        $"/dashboard?generationId={GenerationId}" + (AsOfDate is not null ? $"&asOfDate={AsOfDate}" : "");
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (GenerationId == Guid.Empty)
+        {
+            _error = "generationId query parameter is required.";
+            return;
+        }
+        try
+        {
+            var client = HttpClientFactory.CreateClient("DairyDNA.Api");
+            var url = $"api/dashboard/facilities/{FacilityId}?generationId={GenerationId}";
+            if (!string.IsNullOrWhiteSpace(AsOfDate)) url += $"&asOfDate={AsOfDate}";
+            var response = await client.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                _error = await response.Content.ReadAsStringAsync();
+                _detail = null;
+                return;
+            }
+            _detail = await response.Content.ReadFromJsonAsync<FacilityDto>();
+            _error = null;
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private sealed record FacilityDto(
+        Guid id, string name, string facilityType, string regionCode,
+        decimal latitude, decimal longitude, decimal milkStorageCapacityPounds, decimal creamStorageCapacityPounds,
+        bool active, List<InvRow> inventory, string dataClassification);
+    private sealed record InvRow(string productCode, decimal quantityPounds, int? daysToExpiry);
+}

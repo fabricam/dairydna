@@ -1,6 +1,6 @@
 {
-  "feature_directory": "specs/003-public-data-ingestion",
-  "feature_number": "003",
-  "feature_name": "public-data-ingestion",
+  "feature_directory": "specs/004-operational-dashboard",
+  "feature_number": "004",
+  "feature_name": "operational-dashboard",
   "updated": "2026-07-28"
 }
