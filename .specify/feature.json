@@ -1,6 +1,6 @@
 {
-  "feature_directory": "specs/006-demand-forecasting",
-  "feature_number": "006",
-  "feature_name": "demand-forecasting",
+  "feature_directory": "specs/007-price-forecasting",
+  "feature_number": "007",
+  "feature_name": "price-forecasting",
   "updated": "2026-07-29"
 }

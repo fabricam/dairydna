@@ -1,0 +1,67 @@
+@page "/forecasts/price"
+@rendermode InteractiveServer
+@using DairyDNA.Web.Components.Visuals
+@inject IHttpClientFactory HttpClientFactory
+
+<PageTitle>Price forecasts</PageTitle>
+<div class="ui container" style="margin-top:2em;">
+    <h1 class="ui header">Price forecasts <div class="sub header">Market price estimates with uncertainty bands</div></h1>
+    <div class="ui warning message"><strong>Forecast, not trade quote.</strong> These are demo estimates and are not executable trade quotes, guaranteed clearing prices, or trading advice.</div>
+    <div class="ui form segment"><div class="inline fields">
+        <div class="field"><label>Generation</label><select @onchange="OnPickGen"><option value="">Select…</option>@foreach (var g in _generations) { <option value="@g.id">@g.profileName · @g.id</option> }</select></div>
+        <div class="field"><label>Product</label><select @bind="_product"><option>RAW_MILK</option><option>CREAM</option></select></div>
+        <button class="ui primary button" disabled="@(_generationId is null || _busy)" @onclick="RunAsync">Train &amp; publish</button>
+        <button class="ui button" disabled="@(_generationId is null)" @onclick="LoadAsync">Load forecasts</button>
+    </div></div>
+    @if (_error is not null) { <div class="ui negative message">@_error</div> }
+    @if (_model is not null) { <div class="ui segment"><div class="ui olive label">Forecast</div><p>Model @_model.id · @_model.algorithm · Status @_model.status</p><p>@_model.notes</p></div> }
+    @if (_generationId is not null)
+    {
+        <h3 class="ui header">Forecast bands <div class="ui olive label">Forecast</div></h3>
+        <div class="ui segment dd-visual-panel"><ForecastBandChart Actuals="_actuals" Forecasts="_forecasts" AriaLabel="Actual market prices and price forecast uncertainty band" TextAlternative="Actual market prices are shown separately from forecast price point estimates and uncertainty bands." /></div>
+        <p class="ui tiny message"><strong>Actual:</strong> recorded synthetic market prices. <strong>Forecast:</strong> projected prices with lower and upper uncertainty bounds; not trade quotes.</p>
+    }
+</div>
+
+@code {
+    private List<GenDto> _generations = [];
+    private Guid? _generationId;
+    private string _product = "RAW_MILK";
+    private ModelDto? _model;
+    private List<ForecastBandChart.ActualVm> _actuals = [];
+    private List<ForecastBandChart.ForecastVm> _forecasts = [];
+    private string? _error;
+    private bool _busy;
+    protected override async Task OnInitializedAsync() => _generations = await HttpClientFactory.CreateClient("DairyDNA.Api").GetFromJsonAsync<List<GenDto>>("api/generation-runs") ?? [];
+    private void OnPickGen(ChangeEventArgs e) => _generationId = Guid.TryParse(e.Value?.ToString(), out var id) ? id : null;
+    private async Task RunAsync()
+    {
+        if (_generationId is null) return;
+        _busy = true; _error = null;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("DairyDNA.Api");
+            var response = await client.PostAsJsonAsync("api/forecasts/price/runs", new { generationId = _generationId, randomSeed = 104729 });
+            if (!response.IsSuccessStatusCode) { _error = await response.Content.ReadAsStringAsync(); return; }
+            _model = await response.Content.ReadFromJsonAsync<ModelDto>();
+            await LoadAsync();
+        }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _busy = false; }
+    }
+    private async Task LoadAsync()
+    {
+        if (_generationId is null) return;
+        var client = HttpClientFactory.CreateClient("DairyDNA.Api");
+        var actuals = await client.GetFromJsonAsync<ActualsDto>($"api/forecasts/price/actuals?generationId={_generationId}&productCode={_product}");
+        _actuals = actuals?.items?.Select(x => new ForecastBandChart.ActualVm(x.date, x.actualPricePerPound)).ToList() ?? [];
+        var forecasts = await client.GetFromJsonAsync<ForecastsDto>($"api/forecasts/price?generationId={_generationId}&productCode={_product}");
+        _forecasts = forecasts?.items?.Select(x => new ForecastBandChart.ForecastVm(x.targetDate, x.pointEstimatePricePerPound, x.lowerBoundPricePerPound, x.upperBoundPricePerPound)).ToList() ?? [];
+    }
+    private sealed record GenDto(Guid id, string? profileName);
+    private sealed record ModelDto(Guid id, string algorithm, string status, string? notes);
+    private sealed record ActualsDto(List<ActDto>? items);
+    private sealed record ActDto(DateOnly date, decimal actualPricePerPound);
+    private sealed record ForecastsDto(List<FcDto>? items);
+    private sealed record FcDto(DateOnly targetDate, decimal pointEstimatePricePerPound, decimal lowerBoundPricePerPound, decimal upperBoundPricePerPound);
+}

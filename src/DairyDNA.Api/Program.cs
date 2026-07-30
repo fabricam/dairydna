@@ -26,6 +26,7 @@ builder.Services.AddScoped<IThinSliceGenerator>(sp => sp.GetRequiredService<Synt
 builder.Services.AddScoped<IPublicDataImporter, PublicDataImporter>();
 builder.Services.AddScoped<DairyDNA.Application.Forecasting.ISupplyForecastService, DairyDNA.Forecasting.MlNetSupplyForecastService>();
 builder.Services.AddScoped<DairyDNA.Application.Forecasting.IDemandForecastService, DairyDNA.Forecasting.MlNetDemandForecastService>();
+builder.Services.AddScoped<DairyDNA.Application.Forecasting.IPriceForecastService, DairyDNA.Forecasting.MlNetPriceForecastService>();
 builder.Services.AddSingleton<ITransportCostCalculator, TransportCostCalculator>();
 builder.Services.AddSingleton<IAllocationOptimizer, NaiveContributionMarginOptimizer>();
 builder.Services.AddScoped<CreateGenerationRunHandler>();

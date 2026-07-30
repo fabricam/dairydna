@@ -35,6 +35,9 @@ public sealed class DairyDnaDbContext : DbContext, IDairyDnaDbContext
     public DbSet<DemandModelVersion> DemandModelVersions => Set<DemandModelVersion>();
     public DbSet<DemandFeatureSnapshot> DemandFeatureSnapshots => Set<DemandFeatureSnapshot>();
     public DbSet<DemandForecast> DemandForecasts => Set<DemandForecast>();
+    public DbSet<PriceModelVersion> PriceModelVersions => Set<PriceModelVersion>();
+    public DbSet<PriceFeatureSnapshot> PriceFeatureSnapshots => Set<PriceFeatureSnapshot>();
+    public DbSet<PriceForecast> PriceForecasts => Set<PriceForecast>();
 
     IQueryable<GenerationManifest> IDairyDnaDbContext.GenerationManifests => GenerationManifests;
     IQueryable<Farm> IDairyDnaDbContext.Farms => Farms;
@@ -63,6 +66,9 @@ public sealed class DairyDnaDbContext : DbContext, IDairyDnaDbContext
     IQueryable<DemandModelVersion> IDairyDnaDbContext.DemandModelVersions => DemandModelVersions;
     IQueryable<DemandFeatureSnapshot> IDairyDnaDbContext.DemandFeatureSnapshots => DemandFeatureSnapshots;
     IQueryable<DemandForecast> IDairyDnaDbContext.DemandForecasts => DemandForecasts;
+    IQueryable<PriceModelVersion> IDairyDnaDbContext.PriceModelVersions => PriceModelVersions;
+    IQueryable<PriceFeatureSnapshot> IDairyDnaDbContext.PriceFeatureSnapshots => PriceFeatureSnapshots;
+    IQueryable<PriceForecast> IDairyDnaDbContext.PriceForecasts => PriceForecasts;
 
     public new void Add<T>(T entity) where T : class => Set<T>().Add(entity);
     public void AddRange<T>(IEnumerable<T> entities) where T : class => Set<T>().AddRange(entities);
@@ -115,6 +121,13 @@ public sealed class DairyDnaDbContext : DbContext, IDairyDnaDbContext
         {
             e.HasKey(x => x.Id);
             e.HasIndex(x => new { x.GenerationId, x.ModelVersionId, x.CustomerId, x.HorizonDays, x.TargetDate });
+        });
+        modelBuilder.Entity<PriceModelVersion>().HasKey(x => x.Id);
+        modelBuilder.Entity<PriceFeatureSnapshot>().HasKey(x => x.Id);
+        modelBuilder.Entity<PriceForecast>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => new { x.GenerationId, x.ModelVersionId, x.RegionCode, x.ProductCode, x.HorizonDays, x.TargetDate });
         });
     }
 }

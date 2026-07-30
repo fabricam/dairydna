@@ -32,6 +32,9 @@ public interface IDairyDnaDbContext
     IQueryable<DemandModelVersion> DemandModelVersions { get; }
     IQueryable<DemandFeatureSnapshot> DemandFeatureSnapshots { get; }
     IQueryable<DemandForecast> DemandForecasts { get; }
+    IQueryable<PriceModelVersion> PriceModelVersions { get; }
+    IQueryable<PriceFeatureSnapshot> PriceFeatureSnapshots { get; }
+    IQueryable<PriceForecast> PriceForecasts { get; }
 
     void Add<T>(T entity) where T : class;
     void AddRange<T>(IEnumerable<T> entities) where T : class;

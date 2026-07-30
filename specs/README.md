@@ -17,7 +17,7 @@ Use this index to review specs and activate a feature for plan → tasks → imp
 | 004 | `004-operational-dashboard` | Implemented | [spec.md](./004-operational-dashboard/spec.md) |
 | 005 | `005-supply-forecasting` | Implemented | [spec.md](./005-supply-forecasting/spec.md) |
 | 006 | `006-demand-forecasting` | Implemented | [spec.md](./006-demand-forecasting/spec.md) |
-| 007 | `007-price-forecasting` | Draft | [spec.md](./007-price-forecasting/spec.md) |
+| 007 | `007-price-forecasting` | Implemented | [spec.md](./007-price-forecasting/spec.md) |
 | 008 | `008-transportation-costing` | Draft | [spec.md](./008-transportation-costing/spec.md) |
 | 009 | `009-movement-optimization` | Draft | [spec.md](./009-movement-optimization/spec.md) |
 | 010 | `010-scenario-simulation` | Draft | [spec.md](./010-scenario-simulation/spec.md) |

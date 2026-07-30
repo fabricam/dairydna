@@ -393,3 +393,50 @@ public sealed class DemandForecast
     public bool ColdStart { get; set; }
     public string DataClassification { get; set; } = "Forecast";
 }
+
+public sealed class PriceModelVersion
+{
+    public Guid Id { get; set; }
+    public Guid GenerationId { get; set; }
+    public string ModelFamily { get; set; } = "price";
+    public string Algorithm { get; set; } = "mlnet-sdca";
+    public string FeatureSchemaVersion { get; set; } = "price-features-v1";
+    public string DatasetVersion { get; set; } = string.Empty;
+    public int RandomSeed { get; set; }
+    public string HyperparametersJson { get; set; } = "{}";
+    public string MetricsJson { get; set; } = "{}";
+    public bool MeetsAcceptanceBar { get; set; }
+    public ForecastRunStatus Status { get; set; }
+    public DateTimeOffset TrainedAt { get; set; }
+    public string? Notes { get; set; }
+    public string DataClassification { get; set; } = "Forecast";
+}
+
+public sealed class PriceFeatureSnapshot
+{
+    public Guid Id { get; set; }
+    public Guid ModelVersionId { get; set; }
+    public Guid GenerationId { get; set; }
+    public string? RegionCode { get; set; }
+    public string ProductCode { get; set; } = "RAW_MILK";
+    public DateOnly AsOfDate { get; set; }
+    public DateOnly FeatureDate { get; set; }
+    public string FeatureJson { get; set; } = "{}";
+}
+
+public sealed class PriceForecast
+{
+    public Guid Id { get; set; }
+    public Guid ModelVersionId { get; set; }
+    public Guid GenerationId { get; set; }
+    public ForecastAggregationLevel AggregationLevel { get; set; } = ForecastAggregationLevel.Region;
+    public string? RegionCode { get; set; }
+    public string ProductCode { get; set; } = "RAW_MILK";
+    public DateOnly AsOfDate { get; set; }
+    public DateOnly TargetDate { get; set; }
+    public int HorizonDays { get; set; }
+    public decimal PointEstimatePricePerPound { get; set; }
+    public decimal LowerBoundPricePerPound { get; set; }
+    public decimal UpperBoundPricePerPound { get; set; }
+    public string DataClassification { get; set; } = "Forecast";
+}
