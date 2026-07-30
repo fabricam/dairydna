@@ -88,8 +88,15 @@ Optimizer: OR-Tools (`ortools-cm-v1`) is the system of record since feature
 `optimizerVersion=naive-cm-v1` for regression comparison — see
 `docs/architecture/adr-0001-naive-optimizer.md`.
 
+## Learn the dairy story (recommended for new users)
+
+Start here if you are new to dairy logistics: a page-by-page tutorial that
+explains the industry problem each screen solves and what every map/chart
+means — [`docs/demo/learning-guide.md`](./docs/demo/learning-guide.md).
+
 ## Demo hardening (feature 013)
 
+- **Learning guide** (industry + UI walkthrough): [`docs/demo/learning-guide.md`](./docs/demo/learning-guide.md)
 - **Presenter script**: [`docs/demo/presenter-script.md`](./docs/demo/presenter-script.md)
 - **Seed pack**: [`docs/demo/seed-pack.md`](./docs/demo/seed-pack.md)
 - **Hardening notes** (reference machine, performance budgets, known

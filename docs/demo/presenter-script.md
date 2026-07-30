@@ -12,7 +12,8 @@ labeled by its data classification:
 - **Recommendation** — OR-Tools optimizer output; a *suggested* feasible allocation, not an executed trade or dispatch.
 
 No real trades, no real truck dispatch, no production market advice. See
-[`honesty-boundary.md`](./honesty-boundary.md).
+[`honesty-boundary.md`](./honesty-boundary.md). For a learner-oriented tour of
+every page and dairy concept, see [`learning-guide.md`](./learning-guide.md).
 
 ## 0. Bring up the demo
 
