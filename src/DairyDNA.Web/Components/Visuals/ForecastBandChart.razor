@@ -1,6 +1,13 @@
 @namespace DairyDNA.Web.Components.Visuals
 
-@((MarkupString)SvgMarkup)
+@if (Actuals.Count + Forecasts.Count < 2)
+{
+    <div class="dd-visual-fallback" role="status">No forecast series</div>
+}
+else
+{
+    <ChartCanvas Config="@BuildChartConfig()" AriaLabel="@AriaLabel" Height="@Height" />
+}
 <p class="dd-visual-alt">@TextAlternative</p>
 <table class="ui very compact celled table">
     <thead><tr><th>Date</th><th>Series</th><th>Value</th></tr></thead>
@@ -24,61 +31,77 @@
     [Parameter] public IReadOnlyList<ForecastVm> Forecasts { get; set; } = [];
     [Parameter] public string AriaLabel { get; set; } = "Supply forecast with uncertainty bands";
     [Parameter] public string TextAlternative { get; set; } = string.Empty;
-    [Parameter] public int Width { get; set; } = 720;
     [Parameter] public int Height { get; set; } = 280;
 
-    private string SvgMarkup { get; set; } = string.Empty;
-
-    protected override void OnParametersSet()
+    private object BuildChartConfig()
     {
-        var sb = new System.Text.StringBuilder();
-        sb.Append($"<svg class=\"dd-forecast-chart\" viewBox=\"0 0 {Width} {Height}\" role=\"img\" aria-label=\"{System.Net.WebUtility.HtmlEncode(AriaLabel)}\">");
-        sb.Append($"<title>{System.Net.WebUtility.HtmlEncode(AriaLabel)}</title>");
-        sb.Append($"<rect width=\"{Width}\" height=\"{Height}\" class=\"dd-chart-bg\" />");
-
         var dates = Actuals.Select(a => a.Date).Concat(Forecasts.Select(f => f.Date)).Distinct().OrderBy(d => d).ToList();
-        if (dates.Count < 2)
+        decimal? Actual(DateOnly date) => Actuals.FirstOrDefault(a => a.Date == date)?.Value;
+        decimal? Forecast(DateOnly date, Func<ForecastVm, decimal> select)
         {
-            sb.Append($"<text x=\"{Width / 2}\" y=\"{Height / 2}\" text-anchor=\"middle\" class=\"dd-chart-empty\">No forecast series</text>");
-            sb.Append("</svg>");
-            SvgMarkup = sb.ToString();
-            return;
+            var value = Forecasts.FirstOrDefault(f => f.Date == date);
+            return value is null ? null : select(value);
         }
 
-        var values = Actuals.Select(a => a.Value)
-            .Concat(Forecasts.SelectMany(f => new[] { f.Lower, f.Upper, f.Point }))
-            .DefaultIfEmpty(0).ToList();
-        var min = values.Min();
-        var max = values.Max();
-        if (max <= min) max = min + 1;
-
-        double X(DateOnly d)
+        return new
         {
-            var i = dates.IndexOf(d);
-            return 40 + i * (Width - 60.0) / Math.Max(1, dates.Count - 1);
-        }
-        double Y(decimal v) => Height - 30 - (double)((v - min) / (max - min)) * (Height - 50);
-
-        // Band polygon
-        if (Forecasts.Count >= 2)
-        {
-            var ordered = Forecasts.OrderBy(f => f.Date).ToList();
-            var top = string.Join(" ", ordered.Select(f => $"{X(f.Date):0.##},{Y(f.Upper):0.##}"));
-            var bottom = string.Join(" ", ordered.AsEnumerable().Reverse().Select(f => $"{X(f.Date):0.##},{Y(f.Lower):0.##}"));
-            sb.Append($"<polygon points=\"{top} {bottom}\" class=\"dd-forecast-band\" />");
-            var line = string.Join(" ", ordered.Select((f, i) => $"{(i == 0 ? "M" : "L")}{X(f.Date):0.##},{Y(f.Point):0.##}"));
-            sb.Append($"<path d=\"{line}\" class=\"dd-forecast-point\" fill=\"none\" />");
-        }
-
-        if (Actuals.Count >= 2)
-        {
-            var ordered = Actuals.OrderBy(a => a.Date).ToList();
-            var line = string.Join(" ", ordered.Select((a, i) => $"{(i == 0 ? "M" : "L")}{X(a.Date):0.##},{Y(a.Value):0.##}"));
-            sb.Append($"<path d=\"{line}\" class=\"dd-forecast-actual\" fill=\"none\" />");
-        }
-
-        sb.Append("<text x=\"48\" y=\"18\" class=\"dd-chart-label\">Actual (solid) · Forecast band (shaded) · Point (dashed)</text>");
-        sb.Append("</svg>");
-        SvgMarkup = sb.ToString();
+            type = "line",
+            data = new
+            {
+                labels = dates.Select(d => d.ToString("yyyy-MM-dd")).ToArray(),
+                datasets = new object[]
+                {
+                    new
+                    {
+                        label = "Forecast lower",
+                        data = dates.Select(d => Forecast(d, f => f.Lower)).ToArray(),
+                        borderColor = "rgba(10, 147, 150, 0)",
+                        backgroundColor = "rgba(148, 210, 189, 0.4)",
+                        pointRadius = 0,
+                        spanGaps = false
+                    },
+                    new
+                    {
+                        label = "Forecast interval",
+                        data = dates.Select(d => Forecast(d, f => f.Upper)).ToArray(),
+                        borderColor = "rgba(10, 147, 150, 0)",
+                        backgroundColor = "rgba(148, 210, 189, 0.4)",
+                        pointRadius = 0,
+                        fill = "-1",
+                        spanGaps = false
+                    },
+                    new
+                    {
+                        label = "Forecast point",
+                        data = dates.Select(d => Forecast(d, f => f.Point)).ToArray(),
+                        borderColor = "#0a9396",
+                        backgroundColor = "#0a9396",
+                        borderDash = new[] { 6, 4 },
+                        pointRadius = 2,
+                        tension = 0.15,
+                        spanGaps = false
+                    },
+                    new
+                    {
+                        label = "Actual",
+                        data = dates.Select(Actual).ToArray(),
+                        borderColor = "#243447",
+                        backgroundColor = "#243447",
+                        pointRadius = 2,
+                        tension = 0.15,
+                        spanGaps = false
+                    }
+                }
+            },
+            options = new
+            {
+                interaction = new { mode = "index", intersect = false },
+                scales = new
+                {
+                    x = new { title = new { display = true, text = "Date" } },
+                    y = new { title = new { display = true, text = "Value" } }
+                }
+            }
+        };
     }
 }

@@ -42,84 +42,48 @@ h1:focus {
     overflow-x: auto;
 }
 
-.dd-network-map,
-.dd-margin-chart {
+.dd-google-map {
+    width: 100%;
+    min-height: 240px;
+    border: 1px solid #c5d0db;
+    border-radius: 0.28571429rem;
+    background: #eef3f7;
+    overflow: hidden;
+}
+
+.dd-chart-container {
     width: 100%;
     max-width: 780px;
-    height: auto;
-    display: block;
+    min-height: 180px;
+    position: relative;
 }
 
-.dd-map-bg,
-.dd-chart-bg {
-    fill: #f4f7fa;
-    stroke: #c5d0db;
-    stroke-width: 1;
+.dd-chart-container canvas {
+    width: 100% !important;
+    height: 100% !important;
 }
 
-.dd-map-ocean {
-    fill: #d7e8f3;
-    stroke: #b7c9d6;
-    stroke-width: 1;
+.dd-visual-loading,
+.dd-visual-fallback {
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    border: 1px solid #c5d0db;
+    border-radius: 0.28571429rem;
+    background: #f4f7fa;
+    color: #4a5b6b;
+    text-align: center;
 }
 
-.dd-map-usa {
-    fill: #f7f3ea;
-    stroke: #5b6b7a;
-    stroke-width: 1.4;
+.dd-google-map > .dd-visual-loading,
+.dd-google-map > .dd-visual-fallback {
+    height: 100%;
+    min-height: 0;
+    border: 0;
+    border-radius: 0;
 }
-
-.dd-map-state-hint {
-    fill: #8a97a5;
-    font-size: 9px;
-    font-family: "Segoe UI", Tahoma, sans-serif;
-    opacity: 0.75;
-}
-
-.dd-map-caption {
-    fill: #4a5b6b;
-    font-size: 11px;
-    font-family: "Segoe UI", Tahoma, sans-serif;
-}
-
-.dd-map-facility {
-    fill: #1f4e79;
-    stroke: #0d2b45;
-    stroke-width: 1;
-}
-
-.dd-map-farm {
-    fill: #7a5c29;
-    stroke: #4a3718;
-    stroke-width: 1;
-}
-
-.dd-map-customer {
-    fill: #2a9d8f;
-    stroke: #1b6b61;
-    stroke-width: 1;
-}
-
-.dd-map-arc {
-    stroke: #e76f51;
-    stroke-width: 2.5;
-    stroke-dasharray: 6 4;
-    fill: none;
-    opacity: 0.85;
-}
-
-.dd-map-label,
-.dd-chart-label,
-.dd-chart-legend,
-.dd-chart-empty {
-    fill: #243447;
-    font-size: 11px;
-    font-family: "Segoe UI", Tahoma, sans-serif;
-}
-
-.dd-bar-revenue { fill: #1f4e79; }
-.dd-bar-transport { fill: #e9c46a; }
-.dd-bar-margin { fill: #2a9d8f; }
 
 .dd-visual-alt {
     margin-top: 0.75rem;
@@ -139,50 +103,3 @@ h1:focus {
 .dd-legend-farm { color: #7a5c29; font-weight: 600; }
 .dd-legend-customer { color: #2a9d8f; font-weight: 600; }
 .dd-legend-arc { color: #e76f51; font-weight: 600; }
-
-.dd-age-chart,
-.dd-price-chart {
-    width: 100%;
-    max-width: 720px;
-    height: auto;
-    display: block;
-}
-
-.dd-age-critical { fill: #9b2226; }
-.dd-age-high { fill: #ca6702; }
-.dd-age-moderate { fill: #ee9b00; }
-.dd-age-lower { fill: #0a9396; }
-
-.dd-price-synthetic {
-    stroke: #1f4e79;
-    stroke-width: 2.5;
-}
-
-.dd-price-public {
-    stroke: #0077b6;
-    stroke-width: 2.5;
-    stroke-dasharray: 5 3;
-}
-
-.dd-forecast-chart {
-    width: 100%;
-    max-width: 780px;
-    height: auto;
-    display: block;
-}
-
-.dd-forecast-band {
-    fill: #94d2bd;
-    opacity: 0.45;
-}
-
-.dd-forecast-point {
-    stroke: #0a9396;
-    stroke-width: 2.5;
-    stroke-dasharray: 6 4;
-}
-
-.dd-forecast-actual {
-    stroke: #243447;
-    stroke-width: 2.5;
-}

@@ -1,6 +1,13 @@
 @namespace DairyDNA.Web.Components.Visuals
 
-@((MarkupString)SvgMarkup)
+@if (FilteredPoints.Count < 2)
+{
+    <div class="dd-visual-fallback" role="status">Insufficient price points</div>
+}
+else
+{
+    <ChartCanvas Config="@BuildChartConfig()" AriaLabel="@AriaLabel" Height="@Height" />
+}
 <p class="dd-visual-alt">@TextAlternative</p>
 <table class="ui very compact celled table">
     <thead><tr><th>Date</th><th>Product</th><th>Price/lb</th><th>Class</th></tr></thead>
@@ -19,49 +26,64 @@
     [Parameter] public string ProductCode { get; set; } = "RAW_MILK";
     [Parameter] public string AriaLabel { get; set; } = "Price time series";
     [Parameter] public string TextAlternative { get; set; } = string.Empty;
-    [Parameter] public int Width { get; set; } = 640;
     [Parameter] public int Height { get; set; } = 180;
 
-    private string SvgMarkup { get; set; } = string.Empty;
+    private List<PriceVm> FilteredPoints => Points
+        .Where(p => p.ProductCode.Equals(ProductCode, StringComparison.OrdinalIgnoreCase))
+        .OrderBy(p => p.Date)
+        .ToList();
 
-    protected override void OnParametersSet()
+    private object BuildChartConfig()
     {
-        var series = Points.Where(p => p.ProductCode.Equals(ProductCode, StringComparison.OrdinalIgnoreCase))
-            .OrderBy(p => p.Date).ToList();
-        var sb = new System.Text.StringBuilder();
-        sb.Append($"<svg class=\"dd-price-chart\" viewBox=\"0 0 {Width} {Height}\" role=\"img\" aria-label=\"{System.Net.WebUtility.HtmlEncode(AriaLabel)}\">");
-        sb.Append($"<title>{System.Net.WebUtility.HtmlEncode(AriaLabel)}</title>");
-        sb.Append($"<rect width=\"{Width}\" height=\"{Height}\" class=\"dd-chart-bg\" />");
-        if (series.Count < 2)
+        var series = FilteredPoints;
+        var dates = series.Select(p => p.Date).Distinct().OrderBy(d => d).ToList();
+        decimal? Value(DateOnly date, string classification)
         {
-            sb.Append($"<text x=\"{Width / 2}\" y=\"{Height / 2}\" text-anchor=\"middle\" class=\"dd-chart-empty\">Insufficient price points</text>");
-            sb.Append("</svg>");
-            SvgMarkup = sb.ToString();
-            return;
+            var point = series.FirstOrDefault(p =>
+                p.Date == date && p.Classification.Equals(classification, StringComparison.OrdinalIgnoreCase));
+            return point?.PricePerPound;
         }
 
-        var min = series.Min(p => p.PricePerPound);
-        var max = series.Max(p => p.PricePerPound);
-        if (max <= min) max = min + 0.01m;
-        string PathFor(Func<PriceVm, bool> pred, string css)
+        return new
         {
-            var pts = series.Where(pred).ToList();
-            if (pts.Count < 2) return "";
-            var parts = new List<string>();
-            for (var i = 0; i < pts.Count; i++)
+            type = "line",
+            data = new
             {
-                var idx = series.IndexOf(pts[i]);
-                var x = 30 + idx * (Width - 50.0) / Math.Max(1, series.Count - 1);
-                var y = Height - 25 - (double)((pts[i].PricePerPound - min) / (max - min)) * (Height - 50);
-                parts.Add($"{(i == 0 ? "M" : "L")}{x:0.##},{y:0.##}");
+                labels = dates.Select(d => d.ToString("yyyy-MM-dd")).ToArray(),
+                datasets = new object[]
+                {
+                    new
+                    {
+                        label = "Synthetic",
+                        data = dates.Select(d => Value(d, "Synthetic")).ToArray(),
+                        borderColor = "#1f4e79",
+                        backgroundColor = "#1f4e79",
+                        pointRadius = 1.5,
+                        tension = 0.2,
+                        spanGaps = true
+                    },
+                    new
+                    {
+                        label = "Public",
+                        data = dates.Select(d => Value(d, "Public")).ToArray(),
+                        borderColor = "#0077b6",
+                        backgroundColor = "#0077b6",
+                        borderDash = new[] { 5, 3 },
+                        pointRadius = 1.5,
+                        tension = 0.2,
+                        spanGaps = true
+                    }
+                }
+            },
+            options = new
+            {
+                interaction = new { mode = "index", intersect = false },
+                scales = new
+                {
+                    x = new { title = new { display = true, text = "Date" } },
+                    y = new { title = new { display = true, text = "Price per lb" } }
+                }
             }
-            return $"<path d=\"{string.Join(" ", parts)}\" class=\"{css}\" fill=\"none\" />";
-        }
-
-        sb.Append(PathFor(p => p.Classification.Equals("Synthetic", StringComparison.OrdinalIgnoreCase), "dd-price-synthetic"));
-        sb.Append(PathFor(p => p.Classification.Equals("Public", StringComparison.OrdinalIgnoreCase), "dd-price-public"));
-        sb.Append($"<text x=\"12\" y=\"16\" class=\"dd-chart-label\">{System.Net.WebUtility.HtmlEncode(ProductCode)}</text>");
-        sb.Append("</svg>");
-        SvgMarkup = sb.ToString();
+        };
     }
 }

@@ -114,20 +114,9 @@
             @if (_card.metrics is not null)
             {
                 <h4 class="ui header">Model vs baseline WAPE</h4>
-                <svg viewBox="0 0 260 170" role="img" aria-label="Bar chart comparing model WAPE to baseline WAPE">
-                    <text x="10" y="20">Model</text>
-                    <rect x="80" y="@BarY(_card.metrics.modelWape7)" width="60" height="@BarHeight(_card.metrics.modelWape7)" fill="#2185d0" />
-                    <text x="@(80 + 15)" y="145">@FormatPct(_card.metrics.modelWape7)</text>
-                    <text x="160" y="20">Baseline</text>
-                    <rect x="180" y="@BarY(_card.metrics.baselineWape7)" width="60" height="@BarHeight(_card.metrics.baselineWape7)" fill="#a5673f" />
-                    <text x="@(180 + 5)" y="145">@FormatPct(_card.metrics.baselineWape7)</text>
-                    <line x1="10" y1="130" x2="250" y2="130" stroke="#999" stroke-width="1" />
-                </svg>
-                <p class="dd-visual-alt">
-                    Bar chart comparing model WAPE (@FormatPct(_card.metrics.modelWape7)) to baseline WAPE
-                    (@FormatPct(_card.metrics.baselineWape7)) — a shorter blue bar is a better model.
-                    Improvement vs baseline: @_card.metrics.wapeImprovementPct.ToString("0.0")%.
-                </p>
+                <WapeComparisonChart ModelWape="@_card.metrics.modelWape7"
+                                     BaselineWape="@_card.metrics.baselineWape7"
+                                     ImprovementPct="@_card.metrics.wapeImprovementPct" />
             }
 
             @if (_card.auditTrail.Count > 0)
@@ -251,11 +240,6 @@
 
     private static string ShortChecksum(string? checksum) =>
         string.IsNullOrEmpty(checksum) ? "—" : checksum[..Math.Min(10, checksum.Length)];
-
-    private static string FormatPct(decimal wape) => (wape * 100m).ToString("0.0") + "%";
-
-    private static decimal BarHeight(decimal wape) => Math.Clamp(wape * 400m, 2m, 110m);
-    private static decimal BarY(decimal wape) => 130m - BarHeight(wape);
 
     private sealed record ListDto(List<ModelDto>? items);
     private sealed record ModelDto(

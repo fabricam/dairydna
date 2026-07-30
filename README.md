@@ -15,9 +15,10 @@ and recommends the highest-value **feasible** product movements.
   *public reference* series — never live trading or proprietary data.
 - **Recommendations are suggestions, not instructions.** They are OR-Tools
   optimizer output over the synthetic dataset — nothing has been dispatched.
-- **Local-dev only, unauthenticated.** There is no login, no API keys, no
-  tenant isolation. Do not expose this to the public internet or use it with
-  real business data.
+- **Local-dev only, unauthenticated.** There is no login, API authentication,
+  or tenant isolation. Do not expose this to the public internet or use it
+  with real business data. The browser map uses a restricted Google Maps
+  JavaScript API key as described below.
 - Full detail: [`docs/demo/honesty-boundary.md`](./docs/demo/honesty-boundary.md).
 
 ## One-command demo
@@ -52,6 +53,20 @@ dotnet run --project src/DairyDNA.Api
 
 Web alone needs `ApiBaseUrl` pointing at the API (Aspire wires this via service discovery).
 
+### Google Maps
+
+The U.S. network views use the Google Maps JavaScript API. Enable that API in
+a billing-enabled Google Cloud project, restrict the browser key by HTTP
+referrer, and provide it to the web process without committing it:
+
+```powershell
+$env:GoogleMaps__ApiKey = "your-restricted-browser-key"
+dotnet run --project src/DairyDNA.Web
+```
+
+Without a key, map panels show a configuration message. Charts use Chart.js
+4.5.1 and require access to jsDelivr when the page loads.
+
 ### Tests
 
 ```powershell
@@ -81,7 +96,8 @@ Cursor skills: `/speckit-clarify`, `/speckit-plan`, `/speckit-tasks`, `/speckit-
 ## Stack (pinned)
 
 .NET 10 · ASP.NET Core Minimal APIs · Blazor Interactive Server · Semantic UI ·
-Fluxor · .NET Aspire · EF Core · SQL Server · ML.NET · OR-Tools
+Fluxor · Chart.js · Google Maps · .NET Aspire · EF Core · SQL Server · ML.NET ·
+OR-Tools
 
 Optimizer: OR-Tools (`ortools-cm-v1`) is the system of record since feature
 009; the earlier `naive-cm-v1` remains available only via explicit
