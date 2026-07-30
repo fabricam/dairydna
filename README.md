@@ -60,7 +60,7 @@ a billing-enabled Google Cloud project, restrict the browser key by HTTP
 referrer, and provide it to the web process without committing it:
 
 ```powershell
-$env:GoogleMaps__ApiKey = "your-restricted-browser-key"
+$env:GoogleMaps__ApiKey = Read-Host "Restricted Google Maps browser key"
 dotnet run --project src/DairyDNA.Web
 ```
 
