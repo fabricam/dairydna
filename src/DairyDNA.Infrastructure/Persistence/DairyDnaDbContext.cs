@@ -32,6 +32,9 @@ public sealed class DairyDnaDbContext : DbContext, IDairyDnaDbContext
     public DbSet<SupplyModelVersion> SupplyModelVersions => Set<SupplyModelVersion>();
     public DbSet<SupplyFeatureSnapshot> SupplyFeatureSnapshots => Set<SupplyFeatureSnapshot>();
     public DbSet<SupplyForecast> SupplyForecasts => Set<SupplyForecast>();
+    public DbSet<DemandModelVersion> DemandModelVersions => Set<DemandModelVersion>();
+    public DbSet<DemandFeatureSnapshot> DemandFeatureSnapshots => Set<DemandFeatureSnapshot>();
+    public DbSet<DemandForecast> DemandForecasts => Set<DemandForecast>();
 
     IQueryable<GenerationManifest> IDairyDnaDbContext.GenerationManifests => GenerationManifests;
     IQueryable<Farm> IDairyDnaDbContext.Farms => Farms;
@@ -57,6 +60,9 @@ public sealed class DairyDnaDbContext : DbContext, IDairyDnaDbContext
     IQueryable<SupplyModelVersion> IDairyDnaDbContext.SupplyModelVersions => SupplyModelVersions;
     IQueryable<SupplyFeatureSnapshot> IDairyDnaDbContext.SupplyFeatureSnapshots => SupplyFeatureSnapshots;
     IQueryable<SupplyForecast> IDairyDnaDbContext.SupplyForecasts => SupplyForecasts;
+    IQueryable<DemandModelVersion> IDairyDnaDbContext.DemandModelVersions => DemandModelVersions;
+    IQueryable<DemandFeatureSnapshot> IDairyDnaDbContext.DemandFeatureSnapshots => DemandFeatureSnapshots;
+    IQueryable<DemandForecast> IDairyDnaDbContext.DemandForecasts => DemandForecasts;
 
     public new void Add<T>(T entity) where T : class => Set<T>().Add(entity);
     public void AddRange<T>(IEnumerable<T> entities) where T : class => Set<T>().AddRange(entities);
@@ -102,6 +108,13 @@ public sealed class DairyDnaDbContext : DbContext, IDairyDnaDbContext
         {
             e.HasKey(x => x.Id);
             e.HasIndex(x => new { x.GenerationId, x.ModelVersionId, x.FacilityId, x.HorizonDays, x.TargetDate });
+        });
+        modelBuilder.Entity<DemandModelVersion>().HasKey(x => x.Id);
+        modelBuilder.Entity<DemandFeatureSnapshot>().HasKey(x => x.Id);
+        modelBuilder.Entity<DemandForecast>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => new { x.GenerationId, x.ModelVersionId, x.CustomerId, x.HorizonDays, x.TargetDate });
         });
     }
 }

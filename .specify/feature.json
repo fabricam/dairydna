@@ -1,6 +1,6 @@
 {
-  "feature_directory": "specs/005-supply-forecasting",
-  "feature_number": "005",
-  "feature_name": "supply-forecasting",
-  "updated": "2026-07-28"
+  "feature_directory": "specs/006-demand-forecasting",
+  "feature_number": "006",
+  "feature_name": "demand-forecasting",
+  "updated": "2026-07-29"
 }

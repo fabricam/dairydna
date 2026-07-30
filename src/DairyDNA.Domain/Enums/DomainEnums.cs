@@ -101,5 +101,6 @@ public enum ForecastRunStatus
 public enum ForecastAggregationLevel
 {
     Facility = 0,
-    Region = 1
+    Region = 1,
+    Customer = 2
 }

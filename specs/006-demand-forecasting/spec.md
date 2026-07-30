@@ -2,7 +2,7 @@
 
 **Feature Branch**: `006-demand-forecasting`  
 **Created**: 2026-07-26  
-**Status**: Draft — ready for `/speckit-clarify` → `/speckit-plan`  
+**Status**: Implemented  
 **Product**: DairyDNA  
 **Input**: Program clarifications (Forecasting) + program plan Feature 006  
 **Depends on**: 002; 005 patterns for pipelines/versioning; 003 optional
