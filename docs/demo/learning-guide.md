@@ -110,7 +110,7 @@ economy** and optionally runs the first allocation.
 | Generation status (id, profile, planning date) | Every later page hangs off a **generation id**. |
 | **Load validation report** | Data quality: missingness %, seasonality — dirty inputs ruin plans. |
 | Operational cards: Inventory / Open demand / Fleet | Three pillars of a morning ops huddle. |
-| **Network map** (`NetworkMap`) | Who sits where on a schematic U.S. outline. |
+| **Network map** (`NetworkMap`) | Who sits where on an interactive Google map of the U.S. |
 | Inventory table (Facility, Product, Qty, Oldest expiry) | Stock is perishable — watch expiry. |
 | Demand table (Customer, Product, Qty, Price/lb) | Money is in fulfilled orders at a price. |
 
@@ -130,7 +130,7 @@ delivery feasibility. This page is a **map of the physical network**.
 
 | Component | What it teaches |
 |-----------|-----------------|
-| `NetworkMap` | Farms (green), facilities, customers on a schematic contiguous U.S. |
+| `NetworkMap` | Farms, facilities, and customers on a Google basemap with location details. |
 | Legend | Three node types — never confuse a plant with a buyer. |
 | **Refresh** | Reload points for the active generation. |
 
