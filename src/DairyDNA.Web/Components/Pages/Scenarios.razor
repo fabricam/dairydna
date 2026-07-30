@@ -1,0 +1,118 @@
+@page "/scenarios"
+@rendermode InteractiveServer
+@inject IHttpClientFactory HttpClientFactory
+
+<PageTitle>Scenario simulation</PageTitle>
+
+<div class="ui container" style="margin-top:2em;">
+    <h1 class="ui header">Scenario simulation</h1>
+    <div class="ui warning message">
+        <div class="header">Simulation, not an operational recommendation</div>
+        Inputs are transient overlays on a generated dataset. Failed or infeasible solves are never labeled as recommendations.
+    </div>
+    <div class="ui form segment">
+        <div class="two fields">
+            <div class="field"><label>Generation ID</label><input @bind="GenerationIdText" placeholder="Generate a dataset from Demo first" /></div>
+            <div class="field"><label>Base optimization run ID</label><input @bind="BaseRunIdText" placeholder="Optional; run one below if blank" /></div>
+        </div>
+        <button class="ui teal button" @onclick="ApplyPack">Apply flagship pack</button>
+        <button class="ui button" @onclick="RunBase">Run base optimization</button>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Error))
+    {
+        <div class="ui negative message">@Error</div>
+    }
+    @if (Definitions.Count > 0)
+    {
+        <h3 class="ui header">Scenario definitions</h3>
+        <table class="ui celled table">
+            <thead><tr><th>Name</th><th>Description</th><th>Overrides</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var scenario in Definitions)
+            {
+                <tr>
+                    <td>@scenario.name v@scenario.version</td>
+                    <td>@scenario.description</td>
+                    <td><code>@scenario.overridesJson</code></td>
+                    <td><button class="ui small button" @onclick="() => RunScenario(scenario.id)">Run scenario</button></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+    @if (Comparison is { } comparison)
+    {
+        <h3 class="ui header">Base vs scenario</h3>
+        <div class="ui segment">
+            <p>@comparison.honestyLabel</p>
+            <p>Base: <strong>@comparison.Base.Status</strong> · Scenario: <strong>@comparison.Scenario.Status</strong></p>
+            @if (!comparison.Scenario.IsRecommended)
+            {
+                <div class="ui negative label">Not recommended</div>
+            }
+            <svg viewBox="0 0 480 210" role="img" aria-label="Grouped bars comparing objective and unserved demand">
+                <text x="15" y="20">Objective</text>
+                <rect x="120" y="@BarY(comparison.Base.ObjectiveValue)" width="70" height="@BarHeight(comparison.Base.ObjectiveValue)" fill="#2185d0" />
+                <rect x="200" y="@BarY(comparison.Scenario.ObjectiveValue)" width="70" height="@BarHeight(comparison.Scenario.ObjectiveValue)" fill="#f2711c" />
+                <text x="15" y="150">Unserved rows</text>
+                <rect x="120" y="@CountBarY(comparison.Base.UnservedCount)" width="70" height="@CountBarHeight(comparison.Base.UnservedCount)" fill="#2185d0" />
+                <rect x="200" y="@CountBarY(comparison.Scenario.UnservedCount)" width="70" height="@CountBarHeight(comparison.Scenario.UnservedCount)" fill="#f2711c" />
+                <text x="120" y="205">Base</text><text x="200" y="205">Scenario</text>
+            </svg>
+            <p class="dd-visual-alt">Grouped bars compare objective and unserved demand rows. Blue is base; orange is scenario.</p>
+        </div>
+        <p>@comparison.MovementDiffs.Count movement lanes differ. Detailed flows remain available in optimization recommendations.</p>
+    }
+</div>
+
+@code {
+    private string GenerationIdText { get; set; } = string.Empty;
+    private string BaseRunIdText { get; set; } = string.Empty;
+    private string? Error { get; set; }
+    private List<ScenarioDefinitionDto> Definitions { get; set; } = [];
+    private ScenarioComparisonDto? Comparison { get; set; }
+
+    private async Task ApplyPack()
+    {
+        if (!Guid.TryParse(GenerationIdText, out var generationId)) { Error = "A valid generation ID is required."; return; }
+        Error = null;
+        var client = HttpClientFactory.CreateClient("DairyDNA.Api");
+        var response = await client.PostAsync($"api/scenarios/flagship-pack?generationId={generationId}", null);
+        if (!response.IsSuccessStatusCode) { Error = "Could not apply flagship scenarios."; return; }
+        Definitions = await client.GetFromJsonAsync<List<ScenarioDefinitionDto>>($"api/scenarios?generationId={generationId}") ?? [];
+    }
+
+    private async Task RunBase()
+    {
+        if (!Guid.TryParse(GenerationIdText, out var generationId)) { Error = "A valid generation ID is required."; return; }
+        var client = HttpClientFactory.CreateClient("DairyDNA.Api");
+        var response = await client.PostAsJsonAsync("api/optimization-runs", new { generationId });
+        if (!response.IsSuccessStatusCode) { Error = "Base optimization failed to start."; return; }
+        var run = await response.Content.ReadFromJsonAsync<OptimizationRunDto>();
+        BaseRunIdText = run?.id.ToString() ?? string.Empty;
+    }
+
+    private async Task RunScenario(Guid scenarioId)
+    {
+        var client = HttpClientFactory.CreateClient("DairyDNA.Api");
+        Guid? baseRunId = Guid.TryParse(BaseRunIdText, out var parsed) ? parsed : null;
+        if (baseRunId is null) { await RunBase(); baseRunId = Guid.TryParse(BaseRunIdText, out parsed) ? parsed : null; }
+        if (baseRunId is null) return;
+        var response = await client.PostAsJsonAsync($"api/scenarios/{scenarioId}/runs", new { baseOptimizationRunId = baseRunId });
+        var scenarioRun = await response.Content.ReadFromJsonAsync<ScenarioRunDto>();
+        if (scenarioRun is null || !response.IsSuccessStatusCode) { Error = "Scenario optimization failed to start."; return; }
+        Comparison = await client.GetFromJsonAsync<ScenarioComparisonDto>($"api/scenarios/compare?baseRunId={baseRunId}&scenarioRunId={scenarioRun.id}");
+    }
+
+    private static decimal BarHeight(decimal value) => Math.Min(100m, Math.Abs(value) / 1000m);
+    private static decimal BarY(decimal value) => 125m - BarHeight(value);
+    private static decimal CountBarHeight(int value) => Math.Min(80m, value * 12m);
+    private static decimal CountBarY(int value) => 180m - CountBarHeight(value);
+
+    private sealed record ScenarioDefinitionDto(Guid id, string name, int version, string? description, string overridesJson);
+    private sealed record OptimizationRunDto(Guid id);
+    private sealed record ScenarioRunDto(Guid id);
+    private sealed record RunDto(string status, decimal objectiveValue, int unservedCount, bool isRecommended);
+    private sealed record ScenarioComparisonDto(RunDto Base, RunDto Scenario, List<object> MovementDiffs, string HonestyLabel);
+}

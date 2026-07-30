@@ -157,6 +157,30 @@ public sealed class OptimizationRun
     public string? FailureMessage { get; set; }
 }
 
+public sealed class ScenarioDefinition
+{
+    public Guid Id { get; set; }
+    public Guid GenerationId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public int Version { get; set; } = 1;
+    public string? Description { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public string OverridesJson { get; set; } = "{}";
+    public bool IsFlagshipPackMember { get; set; }
+}
+
+public sealed class ScenarioRun
+{
+    public Guid Id { get; set; }
+    public Guid ScenarioDefinitionId { get; set; }
+    public Guid? BaseOptimizationRunId { get; set; }
+    public Guid OptimizationRunId { get; set; }
+    public OptimizationRunStatus Status { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public decimal? FuelPriceOverride { get; set; }
+    public string? Notes { get; set; }
+}
+
 public sealed class RecommendedMovement
 {
     public Guid Id { get; set; }

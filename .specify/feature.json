@@ -1,6 +1,6 @@
 {
-  "feature_directory": "specs/009-movement-optimization",
-  "feature_number": "009",
-  "feature_name": "movement-optimization",
+  "feature_directory": "specs/010-scenario-simulation",
+  "feature_number": "010",
+  "feature_name": "scenario-simulation",
   "updated": "2026-07-29"
 }

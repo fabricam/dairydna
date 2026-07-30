@@ -16,6 +16,8 @@ public interface IDairyDnaDbContext
     IQueryable<MarketPrice> MarketPrices { get; }
     IQueryable<OptimizationRun> OptimizationRuns { get; }
     IQueryable<RecommendedMovement> RecommendedMovements { get; }
+    IQueryable<ScenarioDefinition> ScenarioDefinitions { get; }
+    IQueryable<ScenarioRun> ScenarioRuns { get; }
     IQueryable<Contract> Contracts { get; }
     IQueryable<Shipment> Shipments { get; }
     IQueryable<WeatherObservation> WeatherObservations { get; }

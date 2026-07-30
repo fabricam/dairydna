@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using DairyDNA.Application.Abstractions;
 using DairyDNA.Application.Demo;
+using DairyDNA.Application.Scenarios;
 using DairyDNA.Domain.Entities;
 using DairyDNA.Domain.Enums;
 using DairyDNA.Domain.Rules;
@@ -17,6 +18,8 @@ public sealed class CreateOptimizationRunRequest
     public string? OptimizerVersion { get; set; }
     public string PriceMode { get; set; } = "Spot"; // Spot | ForecastPoint | ForecastLower | ForecastUpper
     public bool SafetyStockEnabled { get; set; } = true;
+    /// <summary>Ephemeral, persisted-by-scenario overlays; never mutates source rows.</summary>
+    public ScenarioOverrides? ScenarioOverrides { get; set; }
 }
 
 public interface IAllocationOptimizerResolver
@@ -86,6 +89,8 @@ public sealed class CreateOptimizationRunHandler
             RequestDate = o.RequestDate
         }).ToList();
 
+        ApplyScenarioOverrides(lots, orders, request.ScenarioOverrides);
+
         var input = new AllocationInput
         {
             AsOfDate = asOf,
@@ -96,13 +101,17 @@ public sealed class CreateOptimizationRunHandler
             Orders = orders,
             Trucks = await _db.Trucks.Where(x => x.GenerationId == request.GenerationId).ToListAsync(ct)
         };
+        ApplyUserPriceOverrides(input, request.ScenarioOverrides);
 
         if (!string.Equals(request.PriceMode, "Spot", StringComparison.OrdinalIgnoreCase))
         {
             await ApplyForecastPricesAsync(input, request.GenerationId, asOf, request.PriceMode, ct);
         }
 
-        var result = optimizer.Optimize(input, _transport);
+        var transport = request.ScenarioOverrides?.FuelPricePerGallon is { } fuel
+            ? new FuelOverrideTransportCostCalculator(_transport, fuel)
+            : _transport;
+        var result = optimizer.Optimize(input, transport);
         sw.Stop();
 
         var run = new OptimizationRun
@@ -149,6 +158,63 @@ public sealed class CreateOptimizationRunHandler
 
         await _db.SaveChangesAsync(ct);
         return run;
+    }
+
+    private static void ApplyScenarioOverrides(
+        List<InventoryLot> lots,
+        List<Order> orders,
+        ScenarioOverrides? overrides)
+    {
+        if (overrides is null) return;
+        ValidateOverrides(overrides);
+
+        if (overrides.CapacityScaleFactor is { } capacity)
+            foreach (var lot in lots)
+                lot.QuantityPounds = DomainInvariants.Money(lot.QuantityPounds * capacity);
+
+        if (overrides.DemandScaleFactor is { } demand)
+            foreach (var order in orders)
+            {
+                order.RequestedQuantityPounds = DomainInvariants.Money(order.RequestedQuantityPounds * demand);
+                order.MinimumAcceptableQuantityPounds = DomainInvariants.Money(order.MinimumAcceptableQuantityPounds * demand);
+            }
+
+    }
+
+    private static void ApplyUserPriceOverrides(AllocationInput input, ScenarioOverrides? overrides)
+    {
+        if (overrides is null) return;
+        if (overrides.UserPrices is { Count: > 0 } prices)
+        {
+            var productCodes = input.Products.ToDictionary(p => p.Id, p => p.Code);
+            foreach (var order in input.Orders)
+                if (productCodes.TryGetValue(order.ProductId, out var code) && prices.TryGetValue(code, out var price))
+                {
+                    if (price < 0) throw new ArgumentOutOfRangeException(nameof(overrides.UserPrices));
+                    order.OfferedPricePerPound = DomainInvariants.Money(price);
+                }
+        }
+
+        if (overrides.DistantCustomerPriceBump is not { } bump) return;
+        var customers = input.Customers.ToDictionary(c => c.Id);
+        foreach (var order in input.Orders)
+            if (customers.TryGetValue(order.CustomerId, out var customer) && IsDistant(customer, input.Facilities))
+                order.OfferedPricePerPound = DomainInvariants.Money(order.OfferedPricePerPound + bump);
+    }
+
+    private static bool IsDistant(Customer customer, IReadOnlyList<Facility> facilities) =>
+        facilities.Count > 0 && facilities.Min(f =>
+            Math.Pow((double)(customer.Latitude - f.Latitude), 2) +
+            Math.Pow((double)(customer.Longitude - f.Longitude), 2)) > 4;
+
+    private static void ValidateOverrides(ScenarioOverrides overrides)
+    {
+        if (overrides.FuelPricePerGallon is < 0)
+            throw new ArgumentOutOfRangeException(nameof(overrides.FuelPricePerGallon));
+        if (overrides.CapacityScaleFactor is <= 0 or > 10)
+            throw new ArgumentOutOfRangeException(nameof(overrides.CapacityScaleFactor));
+        if (overrides.DemandScaleFactor is <= 0 or > 10)
+            throw new ArgumentOutOfRangeException(nameof(overrides.DemandScaleFactor));
     }
 
     private async Task ApplyForecastPricesAsync(AllocationInput input, Guid generationId, DateOnly asOf, string mode, CancellationToken ct)

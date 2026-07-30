@@ -19,6 +19,8 @@ public sealed class DairyDnaDbContext : DbContext, IDairyDnaDbContext
     public DbSet<MarketPrice> MarketPrices => Set<MarketPrice>();
     public DbSet<OptimizationRun> OptimizationRuns => Set<OptimizationRun>();
     public DbSet<RecommendedMovement> RecommendedMovements => Set<RecommendedMovement>();
+    public DbSet<ScenarioDefinition> ScenarioDefinitions => Set<ScenarioDefinition>();
+    public DbSet<ScenarioRun> ScenarioRuns => Set<ScenarioRun>();
     public DbSet<Contract> Contracts => Set<Contract>();
     public DbSet<Shipment> Shipments => Set<Shipment>();
     public DbSet<WeatherObservation> WeatherObservations => Set<WeatherObservation>();
@@ -50,6 +52,8 @@ public sealed class DairyDnaDbContext : DbContext, IDairyDnaDbContext
     IQueryable<MarketPrice> IDairyDnaDbContext.MarketPrices => MarketPrices;
     IQueryable<OptimizationRun> IDairyDnaDbContext.OptimizationRuns => OptimizationRuns;
     IQueryable<RecommendedMovement> IDairyDnaDbContext.RecommendedMovements => RecommendedMovements;
+    IQueryable<ScenarioDefinition> IDairyDnaDbContext.ScenarioDefinitions => ScenarioDefinitions;
+    IQueryable<ScenarioRun> IDairyDnaDbContext.ScenarioRuns => ScenarioRuns;
     IQueryable<Contract> IDairyDnaDbContext.Contracts => Contracts;
     IQueryable<Shipment> IDairyDnaDbContext.Shipments => Shipments;
     IQueryable<WeatherObservation> IDairyDnaDbContext.WeatherObservations => WeatherObservations;
@@ -90,6 +94,16 @@ public sealed class DairyDnaDbContext : DbContext, IDairyDnaDbContext
         modelBuilder.Entity<Order>().HasKey(x => x.Id);
         modelBuilder.Entity<RecommendedMovement>().HasKey(x => x.Id);
         modelBuilder.Entity<OptimizationRun>().HasKey(x => x.Id);
+        modelBuilder.Entity<ScenarioDefinition>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => new { x.GenerationId, x.Name, x.Version }).IsUnique();
+        });
+        modelBuilder.Entity<ScenarioRun>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.OptimizationRunId).IsUnique();
+        });
         modelBuilder.Entity<Contract>().HasKey(x => x.Id);
         modelBuilder.Entity<Shipment>().HasKey(x => x.Id);
         modelBuilder.Entity<WeatherObservation>().HasKey(x => x.Id);

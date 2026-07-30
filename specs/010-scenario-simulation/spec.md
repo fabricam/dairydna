@@ -2,7 +2,7 @@
 
 **Feature Branch**: `010-scenario-simulation`  
 **Created**: 2026-07-26  
-**Status**: Draft — ready for `/speckit-clarify` → `/speckit-plan`  
+**Status**: Implemented  
 **Product**: DairyDNA  
 **Input**: Program plan §17 flagship narrative + Feature 010  
 **Depends on**: 009 (optimize); 007/008 for price/fuel overrides; 004 for compare UI
