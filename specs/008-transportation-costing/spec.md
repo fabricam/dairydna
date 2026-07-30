@@ -2,7 +2,7 @@
 
 **Feature Branch**: `008-transportation-costing`  
 **Created**: 2026-07-26  
-**Status**: Draft — ready for `/speckit-clarify` → `/speckit-plan`  
+**Status**: Implemented  
 **Product**: DairyDNA  
 **Input**: Program clarifications (Optimization transport) + Feature 008  
 **Depends on**: 001 domain; may replace/extend 000 distance costing; fuel from 003
@@ -109,6 +109,10 @@ rather than returning zero-cost fantasies.
 
 - R1 is single-leg only; multi-stop routing is out of scope.
 - 000 naive costing may be upgraded in place under this feature’s version id.
+- Cost model `transport-cost-v2` uses a 45 mph average speed, 1.0 load/unload
+  hour, 6.5 mpg, and a default fuel price of $3.50 per gallon.
+- Empty returns are included by default, so billed miles are twice the one-way
+  Haversine distance; callers can explicitly opt into one-way billing.
 
 ## Out of Scope
 

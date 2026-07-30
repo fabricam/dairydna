@@ -43,14 +43,40 @@ public interface IDairyDnaDbContext
 
 public sealed class TransportCostBreakdown
 {
+    public string CostingModelVersion { get; init; } = string.Empty;
+    public bool EmptyReturnIncluded { get; init; }
+    public decimal FuelPricePerGallon { get; init; }
+    public string Assumptions { get; init; } = string.Empty;
+    public decimal OneWayMiles { get; init; }
+    public decimal BilledMiles { get; init; }
+    public decimal LoadUnloadHours { get; init; }
+    public decimal AverageSpeedMph { get; init; }
     public decimal DistanceMiles { get; init; }
     public decimal FuelCost { get; init; }
     public decimal OperatingCost { get; init; }
     public decimal TotalEstimatedCost { get; init; }
 }
 
+public sealed class TransportCostRequest
+{
+    public decimal OriginLat { get; init; }
+    public decimal OriginLon { get; init; }
+    public decimal DestLat { get; init; }
+    public decimal DestLon { get; init; }
+    public decimal CostPerMile { get; init; }
+    public decimal CostPerHour { get; init; }
+    public decimal QuantityPounds { get; init; }
+    public decimal? FuelPricePerGallon { get; init; }
+    public decimal? Mpg { get; init; }
+    public bool? IncludeEmptyReturn { get; init; }
+    public string? ProductCode { get; init; }
+    public string? CompatibleProductCodes { get; init; }
+}
+
 public interface ITransportCostCalculator
 {
+    TransportCostBreakdown Calculate(TransportCostRequest request);
+
     TransportCostBreakdown Calculate(
         decimal originLat,
         decimal originLon,

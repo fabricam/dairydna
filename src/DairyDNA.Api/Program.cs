@@ -67,6 +67,7 @@ app.MapOptimizationEndpoints();
 app.MapReferenceEndpoints();
 app.MapImportEndpoints();
 app.MapForecastEndpoints();
+app.MapTransportCostEndpoints();
 
 app.Run();
 

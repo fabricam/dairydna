@@ -1,4 +1,5 @@
 using DairyDNA.Application.Transport;
+using DairyDNA.Application.Abstractions;
 using DairyDNA.Domain.Entities;
 using DairyDNA.Domain.Rules;
 using FluentAssertions;
@@ -78,5 +79,114 @@ public class TransportCostCalculatorTests
         result.FuelCost.Should().BeGreaterThan(0);
         result.OperatingCost.Should().BeGreaterThan(0);
         result.TotalEstimatedCost.Should().Be(result.FuelCost + result.OperatingCost);
+        result.CostingModelVersion.Should().Be("transport-cost-v2");
+        result.EmptyReturnIncluded.Should().BeTrue();
     }
+
+    [Theory]
+    [InlineData(1, 0, 2, 0, 69.09, 433.81)]
+    [InlineData(2, 0, 4, 0, 138.19, 807.63)]
+    [InlineData(0, 1, 0, 2, 69.09, 433.81)]
+    [InlineData(60, 1, 60, 2, 34.55, 246.90)]
+    [InlineData(1, 0, 1, 0, 0, 60)]
+    public void Calculates_known_lanes_to_two_decimal_places(
+        decimal originLat,
+        decimal originLon,
+        decimal destLat,
+        decimal destLon,
+        decimal expectedOneWayMiles,
+        decimal expectedTotal)
+    {
+        var result = new TransportCostCalculator().Calculate(CreateRequest(originLat, originLon, destLat, destLon));
+
+        result.OneWayMiles.Should().BeApproximately(expectedOneWayMiles, 0.01m);
+        result.TotalEstimatedCost.Should().BeApproximately(expectedTotal, 0.01m);
+        result.TotalEstimatedCost.Should().Be(result.FuelCost + result.OperatingCost);
+    }
+
+    [Fact]
+    public void Is_deterministic_for_repeated_calls()
+    {
+        var calculator = new TransportCostCalculator();
+        var request = CreateRequest(43m, -89m, 43.5m, -88.5m);
+        var expected = calculator.Calculate(request);
+
+        for (var i = 0; i < 10; i++)
+            calculator.Calculate(request).Should().BeEquivalentTo(expected);
+    }
+
+    [Fact]
+    public void Rejects_missing_or_invalid_coordinates()
+    {
+        var calculator = new TransportCostCalculator();
+
+        var missingDestination = () => calculator.Calculate(CreateRequest(43m, -89m, 0m, 0m));
+        var invalidLatitude = () => calculator.Calculate(CreateRequest(91m, -89m, 43m, -88m));
+
+        missingDestination.Should().Throw<ArgumentException>();
+        invalidLatitude.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void Higher_fuel_price_increases_fuel_cost()
+    {
+        var calculator = new TransportCostCalculator();
+        var lowPrice = calculator.Calculate(CreateRequest(43m, -89m, 43.5m, -88.5m, fuelPrice: 3m));
+        var highPrice = calculator.Calculate(CreateRequest(43m, -89m, 43.5m, -88.5m, fuelPrice: 5m));
+
+        highPrice.FuelCost.Should().BeGreaterThan(lowPrice.FuelCost);
+    }
+
+    [Fact]
+    public void Empty_return_policy_doubles_billed_miles()
+    {
+        var calculator = new TransportCostCalculator();
+        var roundTrip = calculator.Calculate(CreateRequest(43m, -89m, 43.5m, -88.5m, includeEmptyReturn: true));
+        var oneWay = calculator.Calculate(CreateRequest(43m, -89m, 43.5m, -88.5m, includeEmptyReturn: false));
+
+        roundTrip.BilledMiles.Should().Be(oneWay.BilledMiles * 2m);
+        roundTrip.EmptyReturnIncluded.Should().BeTrue();
+        oneWay.EmptyReturnIncluded.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Rejects_incompatible_product()
+    {
+        var request = new TransportCostRequest
+        {
+            OriginLat = 43m,
+            OriginLon = -89m,
+            DestLat = 43.5m,
+            DestLon = -88.5m,
+            CostPerMile = 1.5m,
+            CostPerHour = 60m,
+            QuantityPounds = 10_000m,
+            ProductCode = "CREAM",
+            CompatibleProductCodes = "RAW_MILK"
+        };
+
+        var act = () => new TransportCostCalculator().Calculate(request);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    private static TransportCostRequest CreateRequest(
+        decimal originLat,
+        decimal originLon,
+        decimal destLat,
+        decimal destLon,
+        decimal? fuelPrice = null,
+        bool? includeEmptyReturn = null) =>
+        new()
+        {
+            OriginLat = originLat,
+            OriginLon = originLon,
+            DestLat = destLat,
+            DestLon = destLon,
+            CostPerMile = 1.5m,
+            CostPerHour = 60m,
+            QuantityPounds = 10_000m,
+            FuelPricePerGallon = fuelPrice,
+            IncludeEmptyReturn = includeEmptyReturn
+        };
 }
