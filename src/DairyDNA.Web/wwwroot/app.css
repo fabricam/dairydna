@@ -45,7 +45,7 @@ h1:focus {
 .dd-network-map,
 .dd-margin-chart {
     width: 100%;
-    max-width: 720px;
+    max-width: 780px;
     height: auto;
     display: block;
 }
@@ -55,6 +55,31 @@ h1:focus {
     fill: #f4f7fa;
     stroke: #c5d0db;
     stroke-width: 1;
+}
+
+.dd-map-ocean {
+    fill: #d7e8f3;
+    stroke: #b7c9d6;
+    stroke-width: 1;
+}
+
+.dd-map-usa {
+    fill: #f7f3ea;
+    stroke: #5b6b7a;
+    stroke-width: 1.4;
+}
+
+.dd-map-state-hint {
+    fill: #8a97a5;
+    font-size: 9px;
+    font-family: "Segoe UI", Tahoma, sans-serif;
+    opacity: 0.75;
+}
+
+.dd-map-caption {
+    fill: #4a5b6b;
+    font-size: 11px;
+    font-family: "Segoe UI", Tahoma, sans-serif;
 }
 
 .dd-map-facility {

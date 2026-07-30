@@ -168,7 +168,7 @@
         var farms = network.Count(p => p.kind.Equals("Farm", StringComparison.OrdinalIgnoreCase));
         var facilities = network.Count(p => p.kind.Equals("Facility", StringComparison.OrdinalIgnoreCase));
         var customers = network.Count(p => p.kind.Equals("Customer", StringComparison.OrdinalIgnoreCase));
-        return $"Network map shows {farms} farms, {facilities} facilities, and {customers} customers plotted by latitude and longitude (schematic, synthetic data).";
+        return $"United States network map shows {farms} farms, {facilities} facilities, and {customers} customers plotted by state (schematic contiguous US).";
     }
 
     private sealed record ValidationReportDto(bool passed, decimal observedMissingnessRate, bool seasonalVariationDetected);

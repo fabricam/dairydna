@@ -70,43 +70,56 @@ public sealed class SyntheticDataGenerator : ISyntheticDataGenerator, IThinSlice
             var products = BuildProducts(id, resolved.RandomSeed, resolved.ProductSet);
             _db.AddRange(products);
 
-            var farms = Enumerable.Range(0, resolved.FarmCount).Select(i => new Farm
+            var farms = Enumerable.Range(0, resolved.FarmCount).Select(i =>
             {
-                Id = GuidFor(id, resolved.RandomSeed, $"farm-{i}"),
-                GenerationId = id,
-                Name = $"Synthetic Farm {i + 1}",
-                RegionCode = $"R{(i % 3) + 1}",
-                Latitude = 42.0m + (decimal)(rng.NextDouble() * 2),
-                Longitude = -90.0m - (decimal)(rng.NextDouble() * 3),
-                HerdSize = 100 + rng.Next(0, 400),
-                Active = true
+                var (state, lat, lon) = UsGeography.Place(i, rng, jitterDegrees: 0.45m);
+                return new Farm
+                {
+                    Id = GuidFor(id, resolved.RandomSeed, $"farm-{i}"),
+                    GenerationId = id,
+                    Name = $"Synthetic Farm {i + 1} ({state})",
+                    RegionCode = state,
+                    Latitude = lat,
+                    Longitude = lon,
+                    HerdSize = 100 + rng.Next(0, 400),
+                    Active = true
+                };
             }).ToList();
             _db.AddRange(farms);
 
-            var facilities = Enumerable.Range(0, resolved.FacilityCount).Select(i => new Facility
+            var facilities = Enumerable.Range(0, resolved.FacilityCount).Select(i =>
             {
-                Id = GuidFor(id, resolved.RandomSeed, $"facility-{i}"),
-                GenerationId = id,
-                Name = $"Facility {i + 1}",
-                FacilityType = i % 4 == 0 ? FacilityType.Receiving : i % 4 == 1 ? FacilityType.Separation : i % 4 == 2 ? FacilityType.Processing : FacilityType.Storage,
-                RegionCode = $"R{(i % 3) + 1}",
-                Latitude = 43.0m + i * 0.15m,
-                Longitude = -89.0m - i * 0.2m,
-                MilkStorageCapacityPounds = 200_000 + i * 10_000,
-                CreamStorageCapacityPounds = 80_000 + i * 5_000,
-                Active = true
+                // Offset index so facilities don't always sit on the same state as farm 0.
+                var (state, lat, lon) = UsGeography.Place(i * 3 + 1, rng, jitterDegrees: 0.25m);
+                return new Facility
+                {
+                    Id = GuidFor(id, resolved.RandomSeed, $"facility-{i}"),
+                    GenerationId = id,
+                    Name = $"Facility {i + 1} ({state})",
+                    FacilityType = i % 4 == 0 ? FacilityType.Receiving : i % 4 == 1 ? FacilityType.Separation : i % 4 == 2 ? FacilityType.Processing : FacilityType.Storage,
+                    RegionCode = state,
+                    Latitude = lat,
+                    Longitude = lon,
+                    MilkStorageCapacityPounds = 200_000 + i * 10_000,
+                    CreamStorageCapacityPounds = 80_000 + i * 5_000,
+                    Active = true
+                };
             }).ToList();
             _db.AddRange(facilities);
 
-            var customers = Enumerable.Range(0, resolved.CustomerCount).Select(i => new Customer
+            var customers = Enumerable.Range(0, resolved.CustomerCount).Select(i =>
             {
-                Id = GuidFor(id, resolved.RandomSeed, $"customer-{i}"),
-                GenerationId = id,
-                Name = $"Customer {i + 1}",
-                RegionCode = $"R{(i % 3) + 1}",
-                Latitude = 43.2m + (decimal)(rng.NextDouble()),
-                Longitude = -88.5m - (decimal)(rng.NextDouble() * 2),
-                Active = true
+                var (state, lat, lon) = UsGeography.Place(i * 2 + 5, rng, jitterDegrees: 0.4m);
+                return new Customer
+                {
+                    Id = GuidFor(id, resolved.RandomSeed, $"customer-{i}"),
+                    GenerationId = id,
+                    Name = $"Customer {i + 1} ({state})",
+                    RegionCode = state,
+                    Latitude = lat,
+                    Longitude = lon,
+                    Active = true
+                };
             }).ToList();
             _db.AddRange(customers);
 
@@ -173,7 +186,7 @@ public sealed class SyntheticDataGenerator : ISyntheticDataGenerator, IThinSlice
                 var heat = (decimal)(0.5 + 0.5 * Math.Sin(2 * Math.PI * (d - 180) / 365.0));
                 var heatStress = DomainInvariants.Money(Math.Max(0, heat - 0.55m) * 10m);
 
-                foreach (var region in new[] { "R1", "R2", "R3" })
+                foreach (var region in farms.Select(f => f.RegionCode).Concat(facilities.Select(f => f.RegionCode)).Distinct())
                 {
                     weather.Add(new WeatherObservation
                     {
