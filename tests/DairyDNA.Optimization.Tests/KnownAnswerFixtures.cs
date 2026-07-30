@@ -147,6 +147,9 @@ public class KnownAnswerFixtures
         }
     }
 
+    public static AllocationInput BuildSimplePublic(decimal price, decimal distanceCustomerLat = 43.1m)
+        => BuildSimple(price, distanceCustomerLat);
+
     private static AllocationInput BuildSimple(
         decimal price,
         decimal distanceCustomerLat = 43.1m,

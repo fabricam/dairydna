@@ -2,7 +2,7 @@
 
 **Feature Branch**: `009-movement-optimization`  
 **Created**: 2026-07-26  
-**Status**: Draft — ready for `/speckit-clarify` → `/speckit-plan`  
+**Status**: Implemented  
 **Product**: DairyDNA  
 **Input**: Program clarifications (Optimization) + ADR naive→OR-Tools + Feature 009  
 **Depends on**: 001–002, 008; forecasts 005–007 preferred for price/supply/demand modes; replaces 000 naive as system of record

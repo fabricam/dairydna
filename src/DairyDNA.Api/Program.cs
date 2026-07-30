@@ -28,7 +28,10 @@ builder.Services.AddScoped<DairyDNA.Application.Forecasting.ISupplyForecastServi
 builder.Services.AddScoped<DairyDNA.Application.Forecasting.IDemandForecastService, DairyDNA.Forecasting.MlNetDemandForecastService>();
 builder.Services.AddScoped<DairyDNA.Application.Forecasting.IPriceForecastService, DairyDNA.Forecasting.MlNetPriceForecastService>();
 builder.Services.AddSingleton<ITransportCostCalculator, TransportCostCalculator>();
-builder.Services.AddSingleton<IAllocationOptimizer, NaiveContributionMarginOptimizer>();
+builder.Services.AddSingleton<OrToolsContributionMarginOptimizer>();
+builder.Services.AddSingleton<NaiveContributionMarginOptimizer>();
+builder.Services.AddSingleton<IAllocationOptimizer>(sp => sp.GetRequiredService<OrToolsContributionMarginOptimizer>());
+builder.Services.AddSingleton<IAllocationOptimizerResolver, AllocationOptimizerResolver>();
 builder.Services.AddScoped<CreateGenerationRunHandler>();
 builder.Services.AddScoped<GetGenerationRunHandler>();
 builder.Services.AddScoped<ListGenerationRunsHandler>();

@@ -67,7 +67,7 @@ public sealed class OptimizationEffects
         try
         {
             var client = _httpClientFactory.CreateClient("DairyDNA.Api");
-            var response = await client.PostAsJsonAsync("api/optimization-runs", new { generationId = action.GenerationId, optimizerVersion = "naive-cm-v1" });
+            var response = await client.PostAsJsonAsync("api/optimization-runs", new { generationId = action.GenerationId });
             response.EnsureSuccessStatusCode();
             var detail = await response.Content.ReadFromJsonAsync<OptimizationDetailDto>();
             if (detail is null) throw new InvalidOperationException("Empty optimization response");

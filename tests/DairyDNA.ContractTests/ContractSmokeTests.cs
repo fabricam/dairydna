@@ -35,7 +35,7 @@ public class ContractSmokeTests : IClassFixture<DairyDnaApiFactory>
         optBody.Should().NotBeNull();
         optBody!.id.Should().NotBeEmpty();
         optBody.status.Should().NotBeNullOrWhiteSpace();
-        optBody.optimizerVersion.Should().Be("naive-cm-v1");
+        optBody.optimizerVersion.Should().Be("ortools-cm-v1");
 
         var getOpt = await _client.GetAsync($"/api/optimization-runs/{optBody.id}");
         getOpt.EnsureSuccessStatusCode();

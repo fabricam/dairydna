@@ -146,7 +146,7 @@ public sealed class OptimizationRun
     public Guid Id { get; set; }
     public Guid GenerationId { get; set; }
     public DateOnly AsOfDate { get; set; }
-    public string OptimizerVersion { get; set; } = "naive-cm-v1";
+    public string OptimizerVersion { get; set; } = "ortools-cm-v1";
     public OptimizationRunStatus Status { get; set; }
     public decimal ObjectiveValue { get; set; }
     public int SolveDurationMilliseconds { get; set; }
