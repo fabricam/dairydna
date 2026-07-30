@@ -1,4 +1,5 @@
 using DairyDNA.Application.Abstractions;
+using DairyDNA.Application.Diagnostics;
 using DairyDNA.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
@@ -11,11 +12,19 @@ public sealed class CreateGenerationRunHandler
 
     public CreateGenerationRunHandler(ISyntheticDataGenerator generator) => _generator = generator;
 
-    public Task<GenerationManifest> HandleAsync(SyntheticGenerationRequest request, CancellationToken ct = default)
-        => _generator.GenerateAsync(request, ct);
+    public async Task<GenerationManifest> HandleAsync(SyntheticGenerationRequest request, CancellationToken ct = default)
+    {
+        using var activity = DairyDnaTelemetry.Source.StartActivity("DairyDNA.Generate");
+        activity?.SetTag("dairydna.profile", request.ProfileName);
+        activity?.SetTag("dairydna.seed", request.RandomSeed);
+        var manifest = await _generator.GenerateAsync(request, ct);
+        activity?.SetTag("dairydna.generation_id", manifest.Id);
+        activity?.SetTag("dairydna.status", manifest.Status.ToString());
+        return manifest;
+    }
 
     public Task<GenerationManifest> HandleAsync(ThinSliceGenerationRequest request, CancellationToken ct = default)
-        => _generator.GenerateAsync(request.ToSynthetic(), ct);
+        => HandleAsync(request.ToSynthetic(), ct);
 }
 
 public sealed class GetGenerationRunHandler

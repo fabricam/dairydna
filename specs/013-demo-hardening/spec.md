@@ -2,7 +2,7 @@
 
 **Feature Branch**: `013-demo-hardening`  
 **Created**: 2026-07-26  
-**Status**: Draft — ready for `/speckit-clarify` → `/speckit-plan`  
+**Status**: Implemented  
 **Product**: DairyDNA  
 **Input**: Program plan M4 / §14–§19 + Feature 013  
 **Depends on**: Prior features used in the flagship demo path (000–012 as available)

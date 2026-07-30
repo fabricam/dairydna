@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using DairyDNA.Application.Abstractions;
 using DairyDNA.Application.Demo;
+using DairyDNA.Application.Diagnostics;
 using DairyDNA.Application.Scenarios;
 using DairyDNA.Domain.Entities;
 using DairyDNA.Domain.Enums;
@@ -45,10 +46,15 @@ public sealed class CreateOptimizationRunHandler
 
     public async Task<OptimizationRun?> HandleAsync(CreateOptimizationRunRequest request, CancellationToken ct = default)
     {
+        using var activity = DairyDnaTelemetry.Source.StartActivity("DairyDNA.Optimize");
+        activity?.SetTag("dairydna.generation_id", request.GenerationId);
+        activity?.SetTag("dairydna.price_mode", request.PriceMode);
+
         var gen = await _db.GenerationManifests.FirstOrDefaultAsync(x => x.Id == request.GenerationId, ct);
         if (gen is null) return null;
 
         var optimizer = _resolvers.Resolve(request.OptimizerVersion);
+        activity?.SetTag("dairydna.optimizer_version", optimizer.Version);
         var asOf = request.AsOfDate ?? gen.PlanningDate;
         var sw = Stopwatch.StartNew();
 
@@ -129,6 +135,9 @@ public sealed class CreateOptimizationRunHandler
             UnservedDemandJson = JsonSerializer.Serialize(result.UnservedDemand),
             FailureMessage = result.FailureMessage
         };
+        activity?.SetTag("dairydna.status", run.Status.ToString());
+        activity?.SetTag("dairydna.objective_value", run.ObjectiveValue);
+        activity?.SetTag("dairydna.movement_count", result.Movements.Count);
 
         _db.Add(run);
         foreach (var m in result.Movements)

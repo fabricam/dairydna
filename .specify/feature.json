@@ -1,6 +1,6 @@
 {
-  "feature_directory": "specs/012-historical-replay",
-  "feature_number": "012",
-  "feature_name": "historical-replay",
+  "feature_directory": "specs/013-demo-hardening",
+  "feature_number": "013",
+  "feature_name": "demo-hardening",
   "updated": "2026-07-29"
 }

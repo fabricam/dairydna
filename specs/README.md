@@ -23,7 +23,7 @@ Use this index to review specs and activate a feature for plan → tasks → imp
 | 010 | `010-scenario-simulation` | Implemented | [spec.md](./010-scenario-simulation/spec.md) |
 | 011 | `011-model-governance` | Implemented | [spec.md](./011-model-governance/spec.md) |
 | 012 | `012-historical-replay` | Implemented | [spec.md](./012-historical-replay/spec.md) |
-| 013 | `013-demo-hardening` | Draft | [spec.md](./013-demo-hardening/spec.md) |
+| 013 | `013-demo-hardening` | Implemented | [spec.md](./013-demo-hardening/spec.md) |
 
 ## How to review
 
