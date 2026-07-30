@@ -78,6 +78,8 @@ public static class GenerationEndpoints
         profileName = m.ProfileName,
         randomSeed = m.RandomSeed,
         status = m.Status.ToString(),
+        startDate = m.StartDate,
+        endDate = m.EndDate,
         planningDate = m.PlanningDate,
         generatedAt = m.GeneratedAt,
         schemaVersion = m.SchemaVersion,

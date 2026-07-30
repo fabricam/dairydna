@@ -1,6 +1,6 @@
 {
-  "feature_directory": "specs/011-model-governance",
-  "feature_number": "011",
-  "feature_name": "model-governance",
+  "feature_directory": "specs/012-historical-replay",
+  "feature_number": "012",
+  "feature_name": "historical-replay",
   "updated": "2026-07-29"
 }

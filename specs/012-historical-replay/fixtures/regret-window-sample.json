@@ -1,0 +1,115 @@
+{
+  "id": "5818ce05-556f-472e-b89a-926185476f7e",
+  "generationId": "1d5e431e-5315-4efc-9696-8480a87636c8",
+  "startDate": "2026-01-01",
+  "endDate": "2026-01-03",
+  "days": [
+    {
+      "asOfDate": "2026-01-01",
+      "replayRunId": "b0e2d924-18b7-4fc4-95e7-7852a45e5a4e",
+      "optimizer": {
+        "optimizationRunId": "685fada4-48d0-4819-aef7-0a5219ba7b88",
+        "status": "Feasible",
+        "objectiveValue": 474.46,
+        "totalRevenue": 550.00,
+        "totalTransportCost": 75.54,
+        "unservedCount": 1,
+        "movementCount": 1
+      },
+      "baselines": [
+        {
+          "policyName": "NearestCustomerGreedy",
+          "objectiveValue": -215.22,
+          "totalRevenue": 1675.00,
+          "totalTransportCost": 1890.22,
+          "unservedCount": 0,
+          "movementCount": 2
+        },
+        {
+          "policyName": "HighestPriceFirst",
+          "objectiveValue": -215.22,
+          "totalRevenue": 1675.00,
+          "totalTransportCost": 1890.22,
+          "unservedCount": 0,
+          "movementCount": 2
+        }
+      ],
+      "optimizerWins": true,
+      "note": "Optimizer objective 474.46 beat the best baseline (-215.22) on 2026-01-01."
+    },
+    {
+      "asOfDate": "2026-01-02",
+      "replayRunId": "eb0fd36e-d68d-4ca6-b4c3-6371c5a4f5e2",
+      "optimizer": {
+        "optimizationRunId": "9ae2bef4-e37b-4a6e-9b5f-c9ae36c772ee",
+        "status": "Feasible",
+        "objectiveValue": 474.46,
+        "totalRevenue": 550.00,
+        "totalTransportCost": 75.54,
+        "unservedCount": 1,
+        "movementCount": 1
+      },
+      "baselines": [
+        {
+          "policyName": "NearestCustomerGreedy",
+          "objectiveValue": -215.22,
+          "totalRevenue": 1675.00,
+          "totalTransportCost": 1890.22,
+          "unservedCount": 0,
+          "movementCount": 2
+        },
+        {
+          "policyName": "HighestPriceFirst",
+          "objectiveValue": -215.22,
+          "totalRevenue": 1675.00,
+          "totalTransportCost": 1890.22,
+          "unservedCount": 0,
+          "movementCount": 2
+        }
+      ],
+      "optimizerWins": true,
+      "note": "Optimizer objective 474.46 beat the best baseline (-215.22) on 2026-01-02."
+    },
+    {
+      "asOfDate": "2026-01-03",
+      "replayRunId": "4f545218-1f42-4980-944e-4b906f82ca23",
+      "optimizer": {
+        "optimizationRunId": "cbe3edd9-d6f0-4475-bbeb-120a846bae31",
+        "status": "Feasible",
+        "objectiveValue": 474.46,
+        "totalRevenue": 550.00,
+        "totalTransportCost": 75.54,
+        "unservedCount": 1,
+        "movementCount": 1
+      },
+      "baselines": [
+        {
+          "policyName": "NearestCustomerGreedy",
+          "objectiveValue": -215.22,
+          "totalRevenue": 1675.00,
+          "totalTransportCost": 1890.22,
+          "unservedCount": 0,
+          "movementCount": 2
+        },
+        {
+          "policyName": "HighestPriceFirst",
+          "objectiveValue": -215.22,
+          "totalRevenue": 1675.00,
+          "totalTransportCost": 1890.22,
+          "unservedCount": 0,
+          "movementCount": 2
+        }
+      ],
+      "optimizerWins": true,
+      "note": "Optimizer objective 474.46 beat the best baseline (-215.22) on 2026-01-03."
+    }
+  ],
+  "summary": {
+    "totalDays": 3,
+    "optimizerWinDays": 3,
+    "meetsBar": true,
+    "statement": "Optimizer wins on at least one primary metric (contribution margin) on 3 of 3 day(s) in this window."
+  },
+  "dataClassification": "Synthetic",
+  "createdAt": "2026-07-30T03:12:52.359154+00:00"
+}

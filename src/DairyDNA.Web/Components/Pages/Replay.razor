@@ -1,0 +1,438 @@
+@page "/replay"
+@rendermode InteractiveServer
+@using DairyDNA.Web.Components.Visuals
+@using DairyDNA.Web.Store.Demo
+@using DairyDNA.Web.Store.Shared
+@inject IHttpClientFactory HttpClientFactory
+
+<PageTitle>Historical replay</PageTitle>
+
+<div class="ui container" style="margin-top:2em;">
+    <h1 class="ui header">Historical replay
+        <div class="sub header">Step through as-of dates and compare recommendations to naive baselines</div>
+    </h1>
+    <div class="ui warning message">
+        <div class="header">Replay, not a historical trading record</div>
+        Replays snapshot inputs strictly as of the selected date and re-run the same optimizer used for live
+        planning. Realized economics are synthetic proxies, not a claim of historical market performance.
+    </div>
+
+    <div class="ui form segment">
+        <div class="inline fields">
+            <div class="field">
+                <label>Generation id</label>
+                <input type="text" @bind="_generationText" style="width:22em;" placeholder="Paste generation GUID" />
+            </div>
+            @if (_generations.Count > 0)
+            {
+                <div class="field">
+                    <label>Recent generations</label>
+                    <select class="ui dropdown" @onchange="OnPickGeneration">
+                        <option value="">Select…</option>
+                        @foreach (var g in _generations)
+                        {
+                            <option value="@g.id">@g.profileName · @g.id</option>
+                        }
+                    </select>
+                </div>
+            }
+            <button type="button" class="ui primary button @(_busy ? "loading" : null)" disabled="@_busy" @onclick="LoadGenerationAsync">Load dataset</button>
+        </div>
+    </div>
+
+    @if (_error is not null)
+    {
+        <div class="ui negative message">@_error</div>
+    }
+
+    @if (_generationDetail is { } detail)
+    {
+        <div class="ui segment">
+            <p>
+                <strong>Dataset window:</strong> @detail.startDate – @detail.endDate ·
+                <strong>Planning date:</strong> @detail.planningDate
+            </p>
+            <div class="field">
+                <label>As-of date: <strong>@SelectedDate</strong> (day @(_dayIndex + 1) of @(MaxDayIndex + 1))</label>
+                <input type="range" min="0" max="@MaxDayIndex" value="@_dayIndex"
+                       @oninput="OnDayIndexInput" style="width:100%;" />
+            </div>
+            <button class="ui button" @onclick="PrevDay" disabled="@(_dayIndex <= 0)">◀ Previous day</button>
+            <button class="ui button" @onclick="NextDay" disabled="@(_dayIndex >= MaxDayIndex)">Next day ▶</button>
+        </div>
+
+        @if (_busy)
+        {
+            <div class="ui active inline loader"></div>
+        }
+        else if (_currentReplay is null)
+        {
+            <div class="ui info message">
+                No replay recorded for @SelectedDate yet. Selecting a new date never silently shows another day's plan.
+                <button class="ui teal button" style="margin-left:1em;" @onclick="RunReplayAsync">Run replay</button>
+            </div>
+        }
+        else
+        {
+            <div class="ui segment">
+                <div class="ui labels">
+                    <div class="ui teal label">Synthetic</div>
+                    <div class="ui olive label">Replay</div>
+                    <div class="ui @(_currentReplay.leakagePassed ? "green" : "red") label">
+                        Leakage @(_currentReplay.leakagePassed ? "passed" : "FAILED")
+                    </div>
+                </div>
+                <p style="margin-top:1em;">
+                    <strong>Status:</strong> @_currentReplay.optimizationStatus ·
+                    <strong>Objective (contribution margin):</strong> @_currentReplay.objectiveValue.ToString("0.00") ·
+                    <strong>Price mode:</strong> @_currentReplay.priceMode
+                </p>
+                <p>
+                    <strong>Optimizer:</strong> @_currentReplay.optimizerVersion ·
+                    <strong>Costing model:</strong> @_currentReplay.costingModelVersion
+                </p>
+                <p>
+                    <strong>Model versions used:</strong>
+                    supply @ShortId(_currentReplay.supplyModelVersionId) ·
+                    demand @ShortId(_currentReplay.demandModelVersionId) ·
+                    price @ShortId(_currentReplay.priceModelVersionId)
+                </p>
+                <button class="ui button" @onclick="RunReplayAsync">Re-run replay for this date</button>
+            </div>
+
+            @if (_demoSummary is { } summary)
+            {
+                <h3 class="ui header">Network map <div class="ui teal label">@summary.dataClassification</div></h3>
+                <div class="ui segment dd-visual-panel">
+                    <NetworkMap Points="ToMapPoints(summary.network)"
+                                AriaLabel="Replay network map of facilities and customers"
+                                TextAlternative="@NetworkAltText(summary)" />
+                    <div class="dd-map-legend">
+                        <span class="dd-legend-farm">■ Farm</span>
+                        <span class="dd-legend-facility">■ Facility</span>
+                        <span class="dd-legend-customer">■ Customer</span>
+                    </div>
+                </div>
+            }
+
+            @if (_optimizationDetail is { } od && od.movements.Count > 0)
+            {
+                <h3 class="ui header">Recommendation highlights <div class="ui orange label">Recommendation</div></h3>
+                <table class="ui celled small table">
+                    <thead><tr><th>#</th><th>Qty (lb)</th><th>Revenue</th><th>Transport</th><th>Margin</th></tr></thead>
+                    <tbody>
+                    @{ var i = 0; }
+                    @foreach (var m in od.movements.OrderByDescending(mv => mv.expectedContributionMargin).Take(5))
+                    {
+                        i++;
+                        <tr>
+                            <td>M@i</td>
+                            <td>@m.quantityPounds</td>
+                            <td>@m.expectedRevenue</td>
+                            <td>@m.transportationCost</td>
+                            <td>@m.expectedContributionMargin</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            }
+        }
+    }
+
+    <h2 class="ui header" style="margin-top:2em;">Regret report <div class="ui olive label">Optimizer vs baselines</div></h2>
+    <div class="ui form segment">
+        <div class="inline fields">
+            <div class="field"><label>Start date</label><input type="date" @bind="_regretStart" /></div>
+            <div class="field"><label>End date</label><input type="date" @bind="_regretEnd" /></div>
+            <button class="ui primary button @(_regretBusy ? "loading" : null)" disabled="@_regretBusy" @onclick="BuildRegretReportAsync">Build regret report</button>
+        </div>
+    </div>
+    @if (_regretError is not null)
+    {
+        <div class="ui negative message">@_regretError</div>
+    }
+    @if (_report is { } report)
+    {
+        <div class="ui segment">
+            <p>@report.summary.statement</p>
+            @if (!report.summary.meetsBar)
+            {
+                <div class="ui negative label">Did not meet the regret bar</div>
+            }
+
+            @{ var bars = BuildComparisonBars(report); var max = Math.Max(1m, bars.Max(b => Math.Abs(b.Value))); }
+            <svg viewBox="0 0 480 220" role="img" aria-label="Grouped bars comparing total optimizer and baseline contribution margin across the window">
+                <title>Grouped bars comparing total optimizer and baseline contribution margin across the window</title>
+                <line x1="20" y1="160" x2="460" y2="160" stroke="#999" stroke-width="1" />
+                @foreach (var bar in bars)
+                {
+                    <g>
+                        <text x="@bar.X" y="20">@bar.Name</text>
+                        <rect x="@bar.X" y="@BarY(bar.Value, max)" width="90" height="@BarHeight(bar.Value, max)" fill="@bar.Color" />
+                        <text x="@bar.X" y="180">@bar.Value.ToString("0")</text>
+                    </g>
+                }
+            </svg>
+            <p class="dd-visual-alt">@ChartAlt(bars)</p>
+        </div>
+
+        <table class="ui celled compact table">
+            <thead><tr><th>Date</th><th>Optimizer margin</th><th>Nearest-customer margin</th><th>Highest-price margin</th><th>Win?</th></tr></thead>
+            <tbody>
+            @foreach (var day in report.days)
+            {
+                <tr class="@(day.optimizerWins ? "positive" : null)">
+                    <td>@day.asOfDate</td>
+                    <td>@day.optimizer.objectiveValue.ToString("0.00")</td>
+                    <td>@(day.baselines.FirstOrDefault(b => b.policyName == "NearestCustomerGreedy")?.objectiveValue.ToString("0.00") ?? "—")</td>
+                    <td>@(day.baselines.FirstOrDefault(b => b.policyName == "HighestPriceFirst")?.objectiveValue.ToString("0.00") ?? "—")</td>
+                    <td>@(day.optimizerWins ? "Yes" : "No")</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+</div>
+
+@code {
+    private string _generationText = string.Empty;
+    private List<GenDto> _generations = [];
+    private GenDetailDto? _generationDetail;
+    private int _dayIndex;
+    private ReplayRunDto? _currentReplay;
+    private DemoSummaryDto? _demoSummary;
+    private OptimizationDetailDto? _optimizationDetail;
+    private string? _error;
+    private bool _busy;
+
+    private DateOnly _regretStart;
+    private DateOnly _regretEnd;
+    private RegretWindowReportDto? _report;
+    private string? _regretError;
+    private bool _regretBusy;
+
+    private DateOnly SelectedDate => _generationDetail is null ? default : _generationDetail.startDate.AddDays(_dayIndex);
+    private int MaxDayIndex => _generationDetail is null ? 0 : Math.Max(0, _generationDetail.endDate.DayNumber - _generationDetail.startDate.DayNumber);
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient("DairyDNA.Api");
+            _generations = await client.GetFromJsonAsync<List<GenDto>>("api/generation-runs") ?? [];
+            if (_generations.Count > 0)
+            {
+                _generationText = _generations[0].id.ToString();
+                await LoadGenerationAsync();
+            }
+        }
+        catch { /* no generations yet is a normal empty state */ }
+    }
+
+    private void OnPickGeneration(ChangeEventArgs e)
+    {
+        if (e.Value is string s && Guid.TryParse(s, out _))
+        {
+            _generationText = s;
+            _ = LoadGenerationAsync();
+        }
+    }
+
+    private async Task LoadGenerationAsync()
+    {
+        _error = null;
+        if (!Guid.TryParse(_generationText, out var id)) { _error = "Enter a valid generation GUID."; return; }
+        _busy = true;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("DairyDNA.Api");
+            var detail = await client.GetFromJsonAsync<GenDetailDto>($"api/generation-runs/{id}");
+            if (detail is null) { _error = "Generation was not found."; return; }
+            _generationDetail = detail;
+            _dayIndex = 0;
+            _regretStart = detail.startDate;
+            _regretEnd = detail.startDate.AddDays(Math.Min(2, MaxDayIndex));
+            await LoadForSelectedDateAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private Task OnDayIndexInput(ChangeEventArgs e)
+    {
+        if (e.Value is string s && int.TryParse(s, out var idx))
+            _dayIndex = Math.Clamp(idx, 0, MaxDayIndex);
+        return LoadForSelectedDateAsync();
+    }
+
+    private Task PrevDay()
+    {
+        if (_dayIndex > 0) _dayIndex--;
+        return LoadForSelectedDateAsync();
+    }
+
+    private Task NextDay()
+    {
+        if (_dayIndex < MaxDayIndex) _dayIndex++;
+        return LoadForSelectedDateAsync();
+    }
+
+    private async Task LoadForSelectedDateAsync()
+    {
+        if (_generationDetail is null) return;
+        _busy = true;
+        _error = null;
+        _currentReplay = null;
+        _demoSummary = null;
+        _optimizationDetail = null;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("DairyDNA.Api");
+            var runs = await client.GetFromJsonAsync<List<ReplayRunDto>>(
+                $"api/replay/runs?generationId={_generationDetail.id}&asOfDate={SelectedDate:yyyy-MM-dd}") ?? [];
+            _currentReplay = runs.FirstOrDefault();
+            if (_currentReplay is not null)
+            {
+                _demoSummary = await client.GetFromJsonAsync<DemoSummaryDto>(
+                    $"api/demo/summary?generationId={_generationDetail.id}&asOfDate={SelectedDate:yyyy-MM-dd}");
+                _optimizationDetail = await client.GetFromJsonAsync<OptimizationDetailDto>(
+                    $"api/optimization-runs/{_currentReplay.optimizationRunId}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task RunReplayAsync()
+    {
+        if (_generationDetail is null) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("DairyDNA.Api");
+            var response = await client.PostAsJsonAsync("api/replay/runs", new
+            {
+                generationId = _generationDetail.id,
+                asOfDate = SelectedDate,
+                priceMode = "Spot"
+            });
+            if (!response.IsSuccessStatusCode)
+            {
+                _error = await response.Content.ReadAsStringAsync();
+                return;
+            }
+            await LoadForSelectedDateAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task BuildRegretReportAsync()
+    {
+        if (_generationDetail is null) { _regretError = "Load a dataset first."; return; }
+        _regretBusy = true;
+        _regretError = null;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("DairyDNA.Api");
+            var response = await client.PostAsJsonAsync("api/replay/reports/regret", new
+            {
+                generationId = _generationDetail.id,
+                startDate = _regretStart,
+                endDate = _regretEnd
+            });
+            if (!response.IsSuccessStatusCode)
+            {
+                _regretError = await response.Content.ReadAsStringAsync();
+                return;
+            }
+            _report = await response.Content.ReadFromJsonAsync<RegretWindowReportDto>();
+        }
+        catch (Exception ex)
+        {
+            _regretError = ex.Message;
+        }
+        finally
+        {
+            _regretBusy = false;
+        }
+    }
+
+    private static List<NetworkMap.NetworkPointVm> ToMapPoints(List<NetworkPointDto> network) =>
+        network.Select(p => new NetworkMap.NetworkPointVm(p.id, p.kind, p.name, p.latitude, p.longitude)).ToList();
+
+    private static string NetworkAltText(DemoSummaryDto summary)
+    {
+        var farms = summary.network.Count(p => p.kind.Equals("Farm", StringComparison.OrdinalIgnoreCase));
+        var facilities = summary.network.Count(p => p.kind.Equals("Facility", StringComparison.OrdinalIgnoreCase));
+        var customers = summary.network.Count(p => p.kind.Equals("Customer", StringComparison.OrdinalIgnoreCase));
+        return $"Replay network map for {summary.asOfDate} shows {farms} farms, {facilities} facilities, and {customers} customers.";
+    }
+
+    private static string ShortId(Guid? id) => id is null ? "—" : id.Value.ToString()[..8];
+
+    private static List<ComparisonBar> BuildComparisonBars(RegretWindowReportDto report)
+    {
+        var optimizerTotal = report.days.Sum(d => d.optimizer.objectiveValue);
+        var nearestTotal = report.days.Sum(d => d.baselines.FirstOrDefault(b => b.policyName == "NearestCustomerGreedy")?.objectiveValue ?? 0m);
+        var highestTotal = report.days.Sum(d => d.baselines.FirstOrDefault(b => b.policyName == "HighestPriceFirst")?.objectiveValue ?? 0m);
+        return
+        [
+            new ComparisonBar("Optimizer", optimizerTotal, 60, "#2185d0"),
+            new ComparisonBar("Nearest-customer", nearestTotal, 210, "#f2711c"),
+            new ComparisonBar("Highest-price", highestTotal, 360, "#a5673f")
+        ];
+    }
+
+    private static decimal BarHeight(decimal value, decimal max) => Math.Min(120m, Math.Abs(value) / max * 120m);
+    private static decimal BarY(decimal value, decimal max) => 160m - BarHeight(value, max);
+
+    private static string ChartAlt(List<ComparisonBar> bars) =>
+        "Total contribution margin over the window: " + string.Join("; ", bars.Select(b => $"{b.Name} {b.Value:0.00}")) + ".";
+
+    private sealed record ComparisonBar(string Name, decimal Value, int X, string Color);
+
+    private sealed record GenDto(Guid id, string? profileName, string? planningDate);
+    private sealed record GenDetailDto(Guid id, string? profileName, string status, DateOnly startDate, DateOnly endDate, DateOnly planningDate);
+
+    private sealed record ReplayRunDto(
+        Guid id, Guid generationId, DateOnly asOfDate, Guid optimizationRunId, string priceMode,
+        Guid? supplyModelVersionId, Guid? demandModelVersionId, Guid? priceModelVersionId,
+        string optimizerVersion, string costingModelVersion, bool leakagePassed, string leakageAuditJson,
+        DateTimeOffset createdAt, string dataClassification, string optimizationStatus, decimal objectiveValue,
+        int unservedCount, int unusedCount);
+
+    private sealed record MovementDto(
+        Guid id, Guid originFacilityId, Guid destinationCustomerId, Guid productId, decimal quantityPounds,
+        Guid truckId, Guid? orderId, decimal expectedUnitPrice, decimal expectedRevenue, decimal transportationCost,
+        decimal fuelCost, decimal operatingCost, decimal distanceMiles, decimal expectedContributionMargin, string explanation);
+
+    private sealed record OptimizationDetailDto(
+        Guid id, Guid generationId, DateOnly asOfDate, string status, decimal objectiveValue, string optimizerVersion,
+        int solveDurationMilliseconds, string dataClassification, List<NetworkPointDto> network, List<MovementDto> movements);
+
+    private sealed record OptimizerDayResultDto(Guid optimizationRunId, string status, decimal objectiveValue, decimal totalRevenue, decimal totalTransportCost, int unservedCount, int movementCount);
+    private sealed record BaselinePolicyResultDto(string policyName, decimal objectiveValue, decimal totalRevenue, decimal totalTransportCost, int unservedCount, int movementCount);
+    private sealed record DailyRegretRowDto(DateOnly asOfDate, Guid replayRunId, OptimizerDayResultDto optimizer, List<BaselinePolicyResultDto> baselines, bool optimizerWins, string note);
+    private sealed record RegretWindowSummaryDto(int totalDays, int optimizerWinDays, bool meetsBar, string statement);
+    private sealed record RegretWindowReportDto(Guid id, Guid generationId, DateOnly startDate, DateOnly endDate, List<DailyRegretRowDto> days, RegretWindowSummaryDto summary, string dataClassification, DateTimeOffset createdAt);
+}

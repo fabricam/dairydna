@@ -5,6 +5,7 @@ using DairyDNA.Application.Generation;
 using DairyDNA.Application.Governance;
 using DairyDNA.Application.Ingestion;
 using DairyDNA.Application.Optimization;
+using DairyDNA.Application.Replay;
 using DairyDNA.Application.Scenarios;
 using DairyDNA.Application.Transport;
 using DairyDNA.DataGenerator;
@@ -44,6 +45,7 @@ builder.Services.AddScoped<CreateOptimizationRunHandler>();
 builder.Services.AddScoped<GetOptimizationRunHandler>();
 builder.Services.AddScoped<IScenarioService, ScenarioService>();
 builder.Services.AddScoped<IModelGovernanceService, ModelGovernanceService>();
+builder.Services.AddScoped<IReplayService, ReplayService>();
 builder.Services.AddScoped<DairyDNA.Application.Reference.ReferenceDataHandlers>();
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
@@ -77,6 +79,7 @@ app.MapImportEndpoints();
 app.MapForecastEndpoints();
 app.MapTransportCostEndpoints();
 app.MapModelGovernanceEndpoints();
+app.MapReplayEndpoints();
 
 app.Run();
 

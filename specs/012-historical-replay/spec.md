@@ -2,7 +2,7 @@
 
 **Feature Branch**: `012-historical-replay`  
 **Created**: 2026-07-26  
-**Status**: Draft — ready for `/speckit-clarify` → `/speckit-plan`  
+**Status**: Implemented  
 **Product**: DairyDNA  
 **Input**: Program plan M4 + Feature 012  
 **Depends on**: 002 datasets, 005–007 forecasts (optional modes), 009 optimize, 010 scenarios

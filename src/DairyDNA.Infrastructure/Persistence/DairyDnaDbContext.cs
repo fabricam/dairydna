@@ -41,6 +41,8 @@ public sealed class DairyDnaDbContext : DbContext, IDairyDnaDbContext
     public DbSet<PriceFeatureSnapshot> PriceFeatureSnapshots => Set<PriceFeatureSnapshot>();
     public DbSet<PriceForecast> PriceForecasts => Set<PriceForecast>();
     public DbSet<GovernanceAuditEvent> GovernanceAuditEvents => Set<GovernanceAuditEvent>();
+    public DbSet<ReplayRun> ReplayRuns => Set<ReplayRun>();
+    public DbSet<ReplayWindowReport> ReplayWindowReports => Set<ReplayWindowReport>();
 
     IQueryable<GenerationManifest> IDairyDnaDbContext.GenerationManifests => GenerationManifests;
     IQueryable<Farm> IDairyDnaDbContext.Farms => Farms;
@@ -75,6 +77,8 @@ public sealed class DairyDnaDbContext : DbContext, IDairyDnaDbContext
     IQueryable<PriceFeatureSnapshot> IDairyDnaDbContext.PriceFeatureSnapshots => PriceFeatureSnapshots;
     IQueryable<PriceForecast> IDairyDnaDbContext.PriceForecasts => PriceForecasts;
     IQueryable<GovernanceAuditEvent> IDairyDnaDbContext.GovernanceAuditEvents => GovernanceAuditEvents;
+    IQueryable<ReplayRun> IDairyDnaDbContext.ReplayRuns => ReplayRuns;
+    IQueryable<ReplayWindowReport> IDairyDnaDbContext.ReplayWindowReports => ReplayWindowReports;
 
     public new void Add<T>(T entity) where T : class => Set<T>().Add(entity);
     public void AddRange<T>(IEnumerable<T> entities) where T : class => Set<T>().AddRange(entities);
@@ -149,6 +153,17 @@ public sealed class DairyDnaDbContext : DbContext, IDairyDnaDbContext
         {
             e.HasKey(x => x.Id);
             e.HasIndex(x => new { x.ModelVersionId, x.At });
+        });
+        modelBuilder.Entity<ReplayRun>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => new { x.GenerationId, x.AsOfDate });
+            e.HasIndex(x => x.OptimizationRunId).IsUnique();
+        });
+        modelBuilder.Entity<ReplayWindowReport>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => new { x.GenerationId, x.StartDate, x.EndDate });
         });
     }
 }

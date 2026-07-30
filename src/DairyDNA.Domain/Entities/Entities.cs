@@ -515,3 +515,34 @@ public sealed class GovernanceAuditEvent
     public DateTimeOffset At { get; set; }
     public string? Notes { get; set; }
 }
+
+/// <summary>A single as-of-date replay: snapshot inputs constrained to that date, optionally
+/// priced with forecast overlays, run through the same optimizer as live planning.</summary>
+public sealed class ReplayRun
+{
+    public Guid Id { get; set; }
+    public Guid GenerationId { get; set; }
+    public DateOnly AsOfDate { get; set; }
+    public Guid OptimizationRunId { get; set; }
+    public string PriceMode { get; set; } = "Spot";
+    public Guid? SupplyModelVersionId { get; set; }
+    public Guid? DemandModelVersionId { get; set; }
+    public Guid? PriceModelVersionId { get; set; }
+    public string OptimizerVersion { get; set; } = string.Empty;
+    public string CostingModelVersion { get; set; } = string.Empty;
+    public string LeakageAuditJson { get; set; } = "{}";
+    public bool LeakagePassed { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public string DataClassification { get; set; } = "Synthetic";
+}
+
+/// <summary>A regret/baseline comparison report for a replay window (start–end inclusive).</summary>
+public sealed class ReplayWindowReport
+{
+    public Guid Id { get; set; }
+    public Guid GenerationId { get; set; }
+    public DateOnly StartDate { get; set; }
+    public DateOnly EndDate { get; set; }
+    public string ReportJson { get; set; } = "{}";
+    public DateTimeOffset CreatedAt { get; set; }
+}
