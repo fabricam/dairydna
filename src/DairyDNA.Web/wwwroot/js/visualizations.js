@@ -92,6 +92,10 @@
             const element = document.getElementById(elementId);
             if (!element) return;
 
+            const previous = maps.get(elementId);
+            previous?.overlays.forEach(overlay => overlay.setMap(null));
+            maps.delete(elementId);
+
             if (!apiKey) {
                 showFallback(
                     element,
@@ -101,9 +105,6 @@
 
             try {
                 const googleMaps = await loadGoogleMaps(apiKey);
-                const previous = maps.get(elementId);
-                previous?.overlays.forEach(overlay => overlay.setMap(null));
-
                 element.replaceChildren();
                 const map = new googleMaps.Map(element, {
                     center: { lat: 39.5, lng: -98.35 },
