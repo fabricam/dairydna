@@ -1,0 +1,271 @@
+@page "/models"
+@rendermode InteractiveServer
+@inject IHttpClientFactory HttpClientFactory
+
+<PageTitle>Model governance</PageTitle>
+
+<div class="ui container" style="margin-top:2em;">
+    <h1 class="ui header">Model governance
+        <div class="sub header">Registry, lifecycle, and model cards for supply/demand/price forecasting models</div>
+    </h1>
+    <div class="ui warning message">
+        <div class="header">Publish/retire are demo governance actions</div>
+        Publishing selects the default model used for new inference within its family and generation. Every lifecycle
+        change is recorded in an audit trail with actor, timestamp, and reason.
+    </div>
+
+    <div class="ui form segment">
+        <div class="inline fields">
+            <div class="field">
+                <label>Family</label>
+                <select @bind="_family" @bind:after="LoadAsync">
+                    <option value="">All</option>
+                    <option value="supply">Supply</option>
+                    <option value="demand">Demand</option>
+                    <option value="price">Price</option>
+                </select>
+            </div>
+            <button class="ui button" @onclick="LoadAsync">Refresh</button>
+        </div>
+    </div>
+
+    @if (_error is not null)
+    {
+        <div class="ui negative message">@_error</div>
+    }
+
+    @if (_models.Count > 0)
+    {
+        <table class="ui celled table">
+            <thead>
+                <tr>
+                    <th>Family</th><th>Algorithm</th><th>Training</th><th>Lifecycle</th><th>Meets bar</th>
+                    <th>Checksum</th><th>Trained</th><th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var m in _models)
+                {
+                    <tr class="@(m.id == _selectedId ? "active" : null)">
+                        <td>@m.modelFamily</td>
+                        <td>@m.algorithm</td>
+                        <td>@m.trainingStatus</td>
+                        <td><span class="ui @LifecycleColor(m.lifecycleStatus) label">@m.lifecycleStatus</span></td>
+                        <td>@(m.meetsAcceptanceBar ? "Yes" : "No")</td>
+                        <td><code>@ShortChecksum(m.artifactChecksumSha256)</code></td>
+                        <td>@m.trainedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                        <td>
+                            <button class="ui tiny button" @onclick="() => SelectAsync(m.id)">Card</button>
+                            @if (m.lifecycleStatus != "Published")
+                            {
+                                <button class="ui tiny primary button" @onclick="() => Publish(m.id)">Publish</button>
+                            }
+                            @if (m.lifecycleStatus != "Retired")
+                            {
+                                <button class="ui tiny negative button" @onclick="() => Retire(m.id)">Retire</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else if (!_busy)
+    {
+        <div class="ui message">No model versions yet — train a supply, demand, or price forecast first.</div>
+    }
+
+    @if (_pendingAction is not null)
+    {
+        <div class="ui segment">
+            <h4 class="ui header">@(_pendingAction == "publish" ? "Publish" : "Retire") model version</h4>
+            <div class="ui form">
+                <div class="field"><label>Actor</label><input @bind="_actor" placeholder="demo-admin" /></div>
+                <div class="field"><label>Reason</label><input @bind="_reason" placeholder="Why is this action being taken?" /></div>
+                @if (_pendingAction == "publish")
+                {
+                    <div class="field">
+                        <div class="ui checkbox">
+                            <input type="checkbox" @bind="_overrideQualityGate" id="overrideGate" />
+                            <label for="overrideGate">Override quality gate (model does not meet acceptance bar)</label>
+                        </div>
+                    </div>
+                }
+                <button class="ui primary button" @onclick="ConfirmPendingAction">Confirm</button>
+                <button class="ui button" @onclick="() => _pendingAction = null">Cancel</button>
+            </div>
+        </div>
+    }
+
+    @if (_card is not null)
+    {
+        <div class="ui segment">
+            <h3 class="ui header">Model card <div class="ui olive label">@_card.version.modelFamily</div></h3>
+            <p><strong>Intent:</strong> @_card.intent</p>
+            <p><strong>Data:</strong> @_card.dataSummary</p>
+            <p><strong>Checksum:</strong> <code>@_card.version.artifactChecksumSha256</code></p>
+            <p><strong>Lifecycle:</strong> @_card.version.lifecycleStatus
+                @(_card.version.publishedAt is not null ? $" · published {_card.version.publishedAt:yyyy-MM-dd HH:mm}" : null)
+                @(_card.version.retiredAt is not null ? $" · retired {_card.version.retiredAt:yyyy-MM-dd HH:mm}" : null)
+            </p>
+            <div class="ui negative message"><strong>Limitations:</strong> @_card.limitations</div>
+            <div class="ui info message"><strong>Leakage control:</strong> @_card.leakageControlStatement</div>
+
+            @if (_card.metrics is not null)
+            {
+                <h4 class="ui header">Model vs baseline WAPE</h4>
+                <svg viewBox="0 0 260 170" role="img" aria-label="Bar chart comparing model WAPE to baseline WAPE">
+                    <text x="10" y="20">Model</text>
+                    <rect x="80" y="@BarY(_card.metrics.modelWape7)" width="60" height="@BarHeight(_card.metrics.modelWape7)" fill="#2185d0" />
+                    <text x="@(80 + 15)" y="145">@FormatPct(_card.metrics.modelWape7)</text>
+                    <text x="160" y="20">Baseline</text>
+                    <rect x="180" y="@BarY(_card.metrics.baselineWape7)" width="60" height="@BarHeight(_card.metrics.baselineWape7)" fill="#a5673f" />
+                    <text x="@(180 + 5)" y="145">@FormatPct(_card.metrics.baselineWape7)</text>
+                    <line x1="10" y1="130" x2="250" y2="130" stroke="#999" stroke-width="1" />
+                </svg>
+                <p class="dd-visual-alt">
+                    Bar chart comparing model WAPE (@FormatPct(_card.metrics.modelWape7)) to baseline WAPE
+                    (@FormatPct(_card.metrics.baselineWape7)) — a shorter blue bar is a better model.
+                    Improvement vs baseline: @_card.metrics.wapeImprovementPct.ToString("0.0")%.
+                </p>
+            }
+
+            @if (_card.auditTrail.Count > 0)
+            {
+                <h4 class="ui header">Audit trail</h4>
+                <table class="ui celled small table">
+                    <thead><tr><th>When</th><th>Action</th><th>Actor</th><th>Reason</th><th>Notes</th></tr></thead>
+                    <tbody>
+                    @foreach (var a in _card.auditTrail)
+                    {
+                        <tr>
+                            <td>@a.at.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td>@a.action</td>
+                            <td>@a.actor</td>
+                            <td>@a.reason</td>
+                            <td>@a.notes</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private string _family = string.Empty;
+    private List<ModelDto> _models = [];
+    private Guid? _selectedId;
+    private CardDto? _card;
+    private string? _error;
+    private bool _busy;
+    private string? _pendingAction;
+    private Guid _pendingId;
+    private string _actor = string.Empty;
+    private string _reason = string.Empty;
+    private bool _overrideQualityGate;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _busy = true;
+        _error = null;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("DairyDNA.Api");
+            var query = string.IsNullOrWhiteSpace(_family) ? string.Empty : $"?family={_family}";
+            var response = await client.GetFromJsonAsync<ListDto>($"api/models{query}");
+            _models = response?.items ?? [];
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task SelectAsync(Guid id)
+    {
+        _selectedId = id;
+        _error = null;
+        var client = HttpClientFactory.CreateClient("DairyDNA.Api");
+        var response = await client.GetAsync($"api/models/{id}/card");
+        if (!response.IsSuccessStatusCode)
+        {
+            _error = "Could not load model card.";
+            _card = null;
+            return;
+        }
+        _card = await response.Content.ReadFromJsonAsync<CardDto>();
+    }
+
+    private void Publish(Guid id)
+    {
+        _pendingAction = "publish";
+        _pendingId = id;
+        _reason = string.Empty;
+        _overrideQualityGate = false;
+    }
+
+    private void Retire(Guid id)
+    {
+        _pendingAction = "retire";
+        _pendingId = id;
+        _reason = string.Empty;
+    }
+
+    private async Task ConfirmPendingAction()
+    {
+        if (string.IsNullOrWhiteSpace(_reason))
+        {
+            _error = "A reason is required.";
+            return;
+        }
+        var client = HttpClientFactory.CreateClient("DairyDNA.Api");
+        var path = _pendingAction == "publish" ? $"api/models/{_pendingId}/publish" : $"api/models/{_pendingId}/retire";
+        object body = _pendingAction == "publish"
+            ? new { actor = _actor, reason = _reason, overrideQualityGate = _overrideQualityGate }
+            : new { actor = _actor, reason = _reason };
+        var response = await client.PostAsJsonAsync(path, body);
+        if (!response.IsSuccessStatusCode)
+        {
+            _error = await response.Content.ReadAsStringAsync();
+            return;
+        }
+        _pendingAction = null;
+        await LoadAsync();
+        if (_selectedId == _pendingId) await SelectAsync(_pendingId);
+    }
+
+    private static string LifecycleColor(string status) => status switch
+    {
+        "Published" => "green",
+        "Retired" => "grey",
+        _ => "yellow"
+    };
+
+    private static string ShortChecksum(string? checksum) =>
+        string.IsNullOrEmpty(checksum) ? "—" : checksum[..Math.Min(10, checksum.Length)];
+
+    private static string FormatPct(decimal wape) => (wape * 100m).ToString("0.0") + "%";
+
+    private static decimal BarHeight(decimal wape) => Math.Clamp(wape * 400m, 2m, 110m);
+    private static decimal BarY(decimal wape) => 130m - BarHeight(wape);
+
+    private sealed record ListDto(List<ModelDto>? items);
+    private sealed record ModelDto(
+        Guid id, Guid generationId, string modelFamily, string algorithm, string featureSchemaVersion,
+        string datasetVersion, int randomSeed, string trainingStatus, string lifecycleStatus,
+        bool meetsAcceptanceBar, string? artifactChecksumSha256, DateTimeOffset trainedAt,
+        DateTimeOffset? publishedAt, DateTimeOffset? retiredAt, string? notes, string dataClassification);
+    private sealed record MetricsDto(
+        decimal modelWape7, decimal baselineWape7, decimal wapeImprovementPct, decimal mae, decimal rmse,
+        decimal bias, decimal intervalCoverage, decimal facilityCoveragePct, bool meetsAcceptanceBar);
+    private sealed record AuditDto(Guid id, Guid modelVersionId, string modelFamily, string action, string actor, string reason, DateTimeOffset at, string? notes);
+    private sealed record CardDto(ModelDto version, string intent, string dataSummary, MetricsDto? metrics, string limitations, string leakageControlStatement, List<AuditDto> auditTrail);
+}

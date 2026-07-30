@@ -40,6 +40,7 @@ public sealed class DairyDnaDbContext : DbContext, IDairyDnaDbContext
     public DbSet<PriceModelVersion> PriceModelVersions => Set<PriceModelVersion>();
     public DbSet<PriceFeatureSnapshot> PriceFeatureSnapshots => Set<PriceFeatureSnapshot>();
     public DbSet<PriceForecast> PriceForecasts => Set<PriceForecast>();
+    public DbSet<GovernanceAuditEvent> GovernanceAuditEvents => Set<GovernanceAuditEvent>();
 
     IQueryable<GenerationManifest> IDairyDnaDbContext.GenerationManifests => GenerationManifests;
     IQueryable<Farm> IDairyDnaDbContext.Farms => Farms;
@@ -73,6 +74,7 @@ public sealed class DairyDnaDbContext : DbContext, IDairyDnaDbContext
     IQueryable<PriceModelVersion> IDairyDnaDbContext.PriceModelVersions => PriceModelVersions;
     IQueryable<PriceFeatureSnapshot> IDairyDnaDbContext.PriceFeatureSnapshots => PriceFeatureSnapshots;
     IQueryable<PriceForecast> IDairyDnaDbContext.PriceForecasts => PriceForecasts;
+    IQueryable<GovernanceAuditEvent> IDairyDnaDbContext.GovernanceAuditEvents => GovernanceAuditEvents;
 
     public new void Add<T>(T entity) where T : class => Set<T>().Add(entity);
     public void AddRange<T>(IEnumerable<T> entities) where T : class => Set<T>().AddRange(entities);
@@ -142,6 +144,11 @@ public sealed class DairyDnaDbContext : DbContext, IDairyDnaDbContext
         {
             e.HasKey(x => x.Id);
             e.HasIndex(x => new { x.GenerationId, x.ModelVersionId, x.RegionCode, x.ProductCode, x.HorizonDays, x.TargetDate });
+        });
+        modelBuilder.Entity<GovernanceAuditEvent>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => new { x.ModelVersionId, x.At });
         });
     }
 }

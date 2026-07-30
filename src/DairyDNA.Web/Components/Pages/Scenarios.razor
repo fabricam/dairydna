@@ -45,19 +45,19 @@
     {
         <h3 class="ui header">Base vs scenario</h3>
         <div class="ui segment">
-            <p>@comparison.honestyLabel</p>
-            <p>Base: <strong>@comparison.Base.Status</strong> · Scenario: <strong>@comparison.Scenario.Status</strong></p>
-            @if (!comparison.Scenario.IsRecommended)
+            <p>@comparison.HonestyLabel</p>
+            <p>Base: <strong>@comparison.Base.status</strong> · Scenario: <strong>@comparison.Scenario.status</strong></p>
+            @if (!comparison.Scenario.isRecommended)
             {
                 <div class="ui negative label">Not recommended</div>
             }
             <svg viewBox="0 0 480 210" role="img" aria-label="Grouped bars comparing objective and unserved demand">
                 <text x="15" y="20">Objective</text>
-                <rect x="120" y="@BarY(comparison.Base.ObjectiveValue)" width="70" height="@BarHeight(comparison.Base.ObjectiveValue)" fill="#2185d0" />
-                <rect x="200" y="@BarY(comparison.Scenario.ObjectiveValue)" width="70" height="@BarHeight(comparison.Scenario.ObjectiveValue)" fill="#f2711c" />
+                <rect x="120" y="@BarY(comparison.Base.objectiveValue)" width="70" height="@BarHeight(comparison.Base.objectiveValue)" fill="#2185d0" />
+                <rect x="200" y="@BarY(comparison.Scenario.objectiveValue)" width="70" height="@BarHeight(comparison.Scenario.objectiveValue)" fill="#f2711c" />
                 <text x="15" y="150">Unserved rows</text>
-                <rect x="120" y="@CountBarY(comparison.Base.UnservedCount)" width="70" height="@CountBarHeight(comparison.Base.UnservedCount)" fill="#2185d0" />
-                <rect x="200" y="@CountBarY(comparison.Scenario.UnservedCount)" width="70" height="@CountBarHeight(comparison.Scenario.UnservedCount)" fill="#f2711c" />
+                <rect x="120" y="@CountBarY(comparison.Base.unservedCount)" width="70" height="@CountBarHeight(comparison.Base.unservedCount)" fill="#2185d0" />
+                <rect x="200" y="@CountBarY(comparison.Scenario.unservedCount)" width="70" height="@CountBarHeight(comparison.Scenario.unservedCount)" fill="#f2711c" />
                 <text x="120" y="205">Base</text><text x="200" y="205">Scenario</text>
             </svg>
             <p class="dd-visual-alt">Grouped bars compare objective and unserved demand rows. Blue is base; orange is scenario.</p>

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using DairyDNA.Application.Abstractions;
 using DairyDNA.Application.Forecasting;
+using DairyDNA.Application.Governance;
 using DairyDNA.Domain.Entities;
 using DairyDNA.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -267,6 +268,11 @@ public sealed class MlNetSupplyForecastService : ISupplyForecastService
         if (!metrics.MeetsAcceptanceBar && modelVersion.Status == ForecastRunStatus.Completed)
             modelVersion.Status = ForecastRunStatus.CompletedBelowBar;
 
+        modelVersion.LifecycleStatus = ModelLifecycleStatus.Candidate;
+        modelVersion.ArtifactChecksumSha256 = ModelArtifactChecksum.Compute(
+            modelVersion.Algorithm, modelVersion.DatasetVersion, modelVersion.FeatureSchemaVersion,
+            modelVersion.RandomSeed, modelVersion.HyperparametersJson, modelVersion.MetricsJson);
+
         _db.AddRange(forecasts);
         await _db.SaveChangesAsync(cancellationToken);
         return modelVersion;
@@ -274,10 +280,7 @@ public sealed class MlNetSupplyForecastService : ISupplyForecastService
 
     public async Task<IReadOnlyList<SupplyForecast>> GetForecastsAsync(Guid generationId, Guid? facilityId = null, string? regionCode = null, CancellationToken cancellationToken = default)
     {
-        var latest = await _db.SupplyModelVersions
-            .Where(m => m.GenerationId == generationId)
-            .OrderByDescending(m => m.TrainedAt)
-            .FirstOrDefaultAsync(cancellationToken);
+        var latest = await GetLatestModelAsync(generationId, cancellationToken);
         if (latest is null) return [];
 
         var q = _db.SupplyForecasts.Where(f => f.ModelVersionId == latest.Id);
@@ -288,10 +291,25 @@ public sealed class MlNetSupplyForecastService : ISupplyForecastService
         return await q.OrderBy(f => f.TargetDate).ThenBy(f => f.ProductCode).ToListAsync(cancellationToken);
     }
 
-    public Task<SupplyModelVersion?> GetLatestModelAsync(Guid generationId, CancellationToken cancellationToken = default)
-        => _db.SupplyModelVersions.Where(m => m.GenerationId == generationId)
+    /// <summary>
+    /// Prefers the family's Published model version (most recently published wins). If none has been
+    /// published yet — a common state for a fresh demo dataset — falls back to the most recently
+    /// trained Completed/CompletedBelowBar version so forecasts remain available before a governance
+    /// review has happened.
+    /// </summary>
+    public async Task<SupplyModelVersion?> GetLatestModelAsync(Guid generationId, CancellationToken cancellationToken = default)
+    {
+        var published = await _db.SupplyModelVersions
+            .Where(m => m.GenerationId == generationId && m.LifecycleStatus == ModelLifecycleStatus.Published)
+            .OrderByDescending(m => m.PublishedAt).ThenByDescending(m => m.TrainedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (published is not null) return published;
+
+        return await _db.SupplyModelVersions
+            .Where(m => m.GenerationId == generationId && m.LifecycleStatus != ModelLifecycleStatus.Retired)
             .OrderByDescending(m => m.TrainedAt)
             .FirstOrDefaultAsync(cancellationToken);
+    }
 
     public async Task<IReadOnlyList<(DateOnly Date, decimal ActualPounds)>> GetActualsAsync(Guid generationId, Guid facilityId, CancellationToken cancellationToken = default)
     {

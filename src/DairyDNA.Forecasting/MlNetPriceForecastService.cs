@@ -1,6 +1,7 @@
 using System.Text.Json;
 using DairyDNA.Application.Abstractions;
 using DairyDNA.Application.Forecasting;
+using DairyDNA.Application.Governance;
 using DairyDNA.Domain.Entities;
 using DairyDNA.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -68,6 +69,10 @@ public sealed class MlNetPriceForecastService : IPriceForecastService
             TrainedAt = DateTimeOffset.UtcNow, Notes = publicRows.Count == 0 ? "Synthetic-only source mix; public market prices were not available." : "Synthetic and public market prices merged by product, region, and date.",
             DataClassification = "Forecast"
         };
+        version.LifecycleStatus = ModelLifecycleStatus.Candidate;
+        version.ArtifactChecksumSha256 = ModelArtifactChecksum.Compute(
+            version.Algorithm, version.DatasetVersion, version.FeatureSchemaVersion,
+            version.RandomSeed, version.HyperparametersJson, version.MetricsJson);
         _db.Add(version);
 
         var forecasts = new List<PriceForecast>();
@@ -96,8 +101,19 @@ public sealed class MlNetPriceForecastService : IPriceForecastService
         if (!string.IsNullOrWhiteSpace(regionCode)) query = query.Where(x => x.RegionCode == regionCode);
         return await query.OrderBy(x => x.TargetDate).ThenBy(x => x.ProductCode).ToListAsync(cancellationToken);
     }
-    public Task<PriceModelVersion?> GetLatestModelAsync(Guid generationId, CancellationToken cancellationToken = default) =>
-        _db.PriceModelVersions.Where(x => x.GenerationId == generationId).OrderByDescending(x => x.TrainedAt).FirstOrDefaultAsync(cancellationToken);
+    public async Task<PriceModelVersion?> GetLatestModelAsync(Guid generationId, CancellationToken cancellationToken = default)
+    {
+        var published = await _db.PriceModelVersions
+            .Where(x => x.GenerationId == generationId && x.LifecycleStatus == ModelLifecycleStatus.Published)
+            .OrderByDescending(x => x.PublishedAt).ThenByDescending(x => x.TrainedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (published is not null) return published;
+
+        return await _db.PriceModelVersions
+            .Where(x => x.GenerationId == generationId && x.LifecycleStatus != ModelLifecycleStatus.Retired)
+            .OrderByDescending(x => x.TrainedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
     public async Task<IReadOnlyList<(DateOnly Date, decimal ActualPricePerPound)>> GetActualsAsync(Guid generationId, string productCode, CancellationToken cancellationToken = default)
     {
         var products = await _db.Products.Where(x => x.GenerationId == generationId && x.Code == productCode).Select(x => x.Id).ToListAsync(cancellationToken);

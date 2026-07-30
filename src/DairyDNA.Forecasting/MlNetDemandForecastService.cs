@@ -1,6 +1,7 @@
 using System.Text.Json;
 using DairyDNA.Application.Abstractions;
 using DairyDNA.Application.Forecasting;
+using DairyDNA.Application.Governance;
 using DairyDNA.Domain.Entities;
 using DairyDNA.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -113,6 +114,10 @@ public sealed class MlNetDemandForecastService : IDemandForecastService
 
         metrics.FacilityCoveragePct = customers.Count == 0 ? 0 : Math.Round(100m * forecasts.Select(x => x.CustomerId).Where(x => x.HasValue).Distinct().Count() / customers.Count, 4);
         modelVersion.MetricsJson = JsonSerializer.Serialize(metrics);
+        modelVersion.LifecycleStatus = ModelLifecycleStatus.Candidate;
+        modelVersion.ArtifactChecksumSha256 = ModelArtifactChecksum.Compute(
+            modelVersion.Algorithm, modelVersion.DatasetVersion, modelVersion.FeatureSchemaVersion,
+            modelVersion.RandomSeed, modelVersion.HyperparametersJson, modelVersion.MetricsJson);
         _db.AddRange(forecasts);
         await _db.SaveChangesAsync(cancellationToken);
         return modelVersion;
@@ -128,8 +133,19 @@ public sealed class MlNetDemandForecastService : IDemandForecastService
         return await query.OrderBy(x => x.TargetDate).ThenBy(x => x.ProductCode).ToListAsync(cancellationToken);
     }
 
-    public Task<DemandModelVersion?> GetLatestModelAsync(Guid generationId, CancellationToken cancellationToken = default) =>
-        _db.DemandModelVersions.Where(x => x.GenerationId == generationId).OrderByDescending(x => x.TrainedAt).FirstOrDefaultAsync(cancellationToken);
+    public async Task<DemandModelVersion?> GetLatestModelAsync(Guid generationId, CancellationToken cancellationToken = default)
+    {
+        var published = await _db.DemandModelVersions
+            .Where(x => x.GenerationId == generationId && x.LifecycleStatus == ModelLifecycleStatus.Published)
+            .OrderByDescending(x => x.PublishedAt).ThenByDescending(x => x.TrainedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (published is not null) return published;
+
+        return await _db.DemandModelVersions
+            .Where(x => x.GenerationId == generationId && x.LifecycleStatus != ModelLifecycleStatus.Retired)
+            .OrderByDescending(x => x.TrainedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
 
     public async Task<IReadOnlyList<(DateOnly Date, decimal ActualPounds)>> GetActualsAsync(Guid generationId, Guid customerId, CancellationToken cancellationToken = default) =>
         (await _db.Orders.Where(x => x.GenerationId == generationId && x.CustomerId == customerId)

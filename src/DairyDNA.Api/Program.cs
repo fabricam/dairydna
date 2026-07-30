@@ -2,6 +2,7 @@ using DairyDNA.Api.Endpoints;
 using DairyDNA.Application.Abstractions;
 using DairyDNA.Application.Demo;
 using DairyDNA.Application.Generation;
+using DairyDNA.Application.Governance;
 using DairyDNA.Application.Ingestion;
 using DairyDNA.Application.Optimization;
 using DairyDNA.Application.Scenarios;
@@ -42,6 +43,7 @@ builder.Services.AddScoped<DairyDNA.Application.Dashboard.GetDashboardHandler>()
 builder.Services.AddScoped<CreateOptimizationRunHandler>();
 builder.Services.AddScoped<GetOptimizationRunHandler>();
 builder.Services.AddScoped<IScenarioService, ScenarioService>();
+builder.Services.AddScoped<IModelGovernanceService, ModelGovernanceService>();
 builder.Services.AddScoped<DairyDNA.Application.Reference.ReferenceDataHandlers>();
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
@@ -74,6 +76,7 @@ app.MapReferenceEndpoints();
 app.MapImportEndpoints();
 app.MapForecastEndpoints();
 app.MapTransportCostEndpoints();
+app.MapModelGovernanceEndpoints();
 
 app.Run();
 

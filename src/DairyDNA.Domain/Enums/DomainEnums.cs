@@ -104,3 +104,10 @@ public enum ForecastAggregationLevel
     Region = 1,
     Customer = 2
 }
+
+public enum ModelLifecycleStatus
+{
+    Candidate = 0,
+    Published = 1,
+    Retired = 2
+}

@@ -319,7 +319,31 @@ public sealed class FuelPriceObservation
     public string DataClassification { get; set; } = "Public";
 }
 
-public sealed class SupplyModelVersion
+/// <summary>Common shape shared by SupplyModelVersion/DemandModelVersion/PriceModelVersion so governance code can operate generically without a parallel model hierarchy.</summary>
+public interface IModelVersion
+{
+    Guid Id { get; set; }
+    Guid GenerationId { get; set; }
+    string ModelFamily { get; set; }
+    string Algorithm { get; set; }
+    string FeatureSchemaVersion { get; set; }
+    string DatasetVersion { get; set; }
+    int RandomSeed { get; set; }
+    string HyperparametersJson { get; set; }
+    string MetricsJson { get; set; }
+    bool MeetsAcceptanceBar { get; set; }
+    ForecastRunStatus Status { get; set; }
+    DateTimeOffset TrainedAt { get; set; }
+    string? Notes { get; set; }
+    string DataClassification { get; set; }
+    string? ArtifactChecksumSha256 { get; set; }
+    ModelLifecycleStatus LifecycleStatus { get; set; }
+    DateTimeOffset? PublishedAt { get; set; }
+    DateTimeOffset? RetiredAt { get; set; }
+    string? ModelCardMarkdown { get; set; }
+}
+
+public sealed class SupplyModelVersion : IModelVersion
 {
     public Guid Id { get; set; }
     public Guid GenerationId { get; set; }
@@ -335,6 +359,11 @@ public sealed class SupplyModelVersion
     public DateTimeOffset TrainedAt { get; set; }
     public string? Notes { get; set; }
     public string DataClassification { get; set; } = "Forecast";
+    public string? ArtifactChecksumSha256 { get; set; }
+    public ModelLifecycleStatus LifecycleStatus { get; set; } = ModelLifecycleStatus.Candidate;
+    public DateTimeOffset? PublishedAt { get; set; }
+    public DateTimeOffset? RetiredAt { get; set; }
+    public string? ModelCardMarkdown { get; set; }
 }
 
 public sealed class SupplyFeatureSnapshot
@@ -368,7 +397,7 @@ public sealed class SupplyForecast
     public string DataClassification { get; set; } = "Forecast";
 }
 
-public sealed class DemandModelVersion
+public sealed class DemandModelVersion : IModelVersion
 {
     public Guid Id { get; set; }
     public Guid GenerationId { get; set; }
@@ -384,6 +413,11 @@ public sealed class DemandModelVersion
     public DateTimeOffset TrainedAt { get; set; }
     public string? Notes { get; set; }
     public string DataClassification { get; set; } = "Forecast";
+    public string? ArtifactChecksumSha256 { get; set; }
+    public ModelLifecycleStatus LifecycleStatus { get; set; } = ModelLifecycleStatus.Candidate;
+    public DateTimeOffset? PublishedAt { get; set; }
+    public DateTimeOffset? RetiredAt { get; set; }
+    public string? ModelCardMarkdown { get; set; }
 }
 
 public sealed class DemandFeatureSnapshot
@@ -418,7 +452,7 @@ public sealed class DemandForecast
     public string DataClassification { get; set; } = "Forecast";
 }
 
-public sealed class PriceModelVersion
+public sealed class PriceModelVersion : IModelVersion
 {
     public Guid Id { get; set; }
     public Guid GenerationId { get; set; }
@@ -434,6 +468,11 @@ public sealed class PriceModelVersion
     public DateTimeOffset TrainedAt { get; set; }
     public string? Notes { get; set; }
     public string DataClassification { get; set; } = "Forecast";
+    public string? ArtifactChecksumSha256 { get; set; }
+    public ModelLifecycleStatus LifecycleStatus { get; set; } = ModelLifecycleStatus.Candidate;
+    public DateTimeOffset? PublishedAt { get; set; }
+    public DateTimeOffset? RetiredAt { get; set; }
+    public string? ModelCardMarkdown { get; set; }
 }
 
 public sealed class PriceFeatureSnapshot
@@ -463,4 +502,16 @@ public sealed class PriceForecast
     public decimal LowerBoundPricePerPound { get; set; }
     public decimal UpperBoundPricePerPound { get; set; }
     public string DataClassification { get; set; } = "Forecast";
+}
+
+public sealed class GovernanceAuditEvent
+{
+    public Guid Id { get; set; }
+    public Guid ModelVersionId { get; set; }
+    public string ModelFamily { get; set; } = string.Empty;
+    public string Action { get; set; } = string.Empty;
+    public string Actor { get; set; } = string.Empty;
+    public string Reason { get; set; } = string.Empty;
+    public DateTimeOffset At { get; set; }
+    public string? Notes { get; set; }
 }
