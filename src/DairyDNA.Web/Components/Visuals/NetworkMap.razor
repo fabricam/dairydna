@@ -1,6 +1,15 @@
 @namespace DairyDNA.Web.Components.Visuals
+@inject IConfiguration Configuration
+@inject IJSRuntime JS
+@implements IAsyncDisposable
 
-@((MarkupString)SvgMarkup)
+<div id="@_mapId"
+     class="dd-google-map"
+     style="height:@($"{Height}px")"
+     role="region"
+     aria-label="@AriaLabel">
+    <div class="dd-visual-loading">Loading Google Maps…</div>
+</div>
 <p class="dd-visual-alt">@TextAlternative</p>
 
 @code {
@@ -8,120 +17,52 @@
     [Parameter] public IReadOnlyList<NetworkFlowVm> Flows { get; set; } = [];
     [Parameter] public string AriaLabel { get; set; } = "United States network map of facilities and customers";
     [Parameter] public string TextAlternative { get; set; } = string.Empty;
-    [Parameter] public int Width { get; set; } = 720;
     [Parameter] public int Height { get; set; } = 420;
+    [Parameter] public string? ApiKey { get; set; }
 
-    private string SvgMarkup { get; set; } = string.Empty;
-
-    // Contiguous US geographic frame (equirectangular).
-    private const decimal MinLat = 24.5m;
-    private const decimal MaxLat = 49.5m;
-    private const decimal MinLon = -125.0m;
-    private const decimal MaxLon = -66.5m;
-    private const double Pad = 18;
+    private readonly string _mapId = $"map-{Guid.NewGuid():N}";
+    private int _version;
+    private int _renderedVersion = -1;
+    private int? _dataHash;
 
     protected override void OnParametersSet()
     {
-        var sb = new System.Text.StringBuilder();
-        sb.Append($"<svg class=\"dd-network-map\" viewBox=\"0 0 {Width} {Height}\" role=\"img\" aria-label=\"{System.Net.WebUtility.HtmlEncode(AriaLabel)}\">");
-        sb.Append($"<title>{System.Net.WebUtility.HtmlEncode(AriaLabel)}</title>");
-        sb.Append($"<rect width=\"{Width}\" height=\"{Height}\" class=\"dd-map-ocean\" />");
-
-        // Simplified contiguous US outline (lon, lat pairs).
-        sb.Append($"<path d=\"{UsOutlinePath()}\" class=\"dd-map-usa\" />");
-        sb.Append(StateHintsMarkup());
-
-        foreach (var flow in Flows)
-        {
-            var from = Points.FirstOrDefault(p => p.id == flow.originId);
-            var to = Points.FirstOrDefault(p => p.id == flow.destinationId);
-            if (from is null || to is null) continue;
-            var (x1, y1) = Project(from.latitude, from.longitude);
-            var (x2, y2) = Project(to.latitude, to.longitude);
-            sb.Append($"<line x1=\"{x1:0.##}\" y1=\"{y1:0.##}\" x2=\"{x2:0.##}\" y2=\"{y2:0.##}\" class=\"dd-map-arc\" />");
-        }
-
+        var hash = new HashCode();
+        hash.Add(ApiKey);
+        hash.Add(Height);
         foreach (var point in Points)
+            hash.Add(point);
+        foreach (var flow in Flows)
+            hash.Add(flow);
+
+        var nextHash = hash.ToHashCode();
+        if (_dataHash == nextHash)
+            return;
+
+        _dataHash = nextHash;
+        _version++;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_renderedVersion == _version)
+            return;
+
+        _renderedVersion = _version;
+        var apiKey = ApiKey ?? Configuration["GoogleMaps:ApiKey"] ?? string.Empty;
+        await JS.InvokeVoidAsync("dairyDnaMaps.render", _mapId, apiKey, Points, Flows);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
         {
-            var (x, y) = Project(point.latitude, point.longitude);
-            var css = point.kind.Equals("Facility", StringComparison.OrdinalIgnoreCase) ? "dd-map-facility"
-                : point.kind.Equals("Farm", StringComparison.OrdinalIgnoreCase) ? "dd-map-farm"
-                : "dd-map-customer";
-            var title = System.Net.WebUtility.HtmlEncode($"{point.kind}: {point.name}");
-            var label = System.Net.WebUtility.HtmlEncode(ShortName(point.name));
-            sb.Append($"<circle cx=\"{x:0.##}\" cy=\"{y:0.##}\" r=\"6\" class=\"{css}\"><title>{title}</title></circle>");
-            sb.Append($"<text x=\"{x + 8:0.##}\" y=\"{y + 3:0.##}\" class=\"dd-map-label\">{label}</text>");
+            await JS.InvokeVoidAsync("dairyDnaMaps.destroy", _mapId);
         }
-
-        sb.Append("<text x=\"24\" y=\"28\" class=\"dd-map-caption\">Contiguous United States (schematic)</text>");
-        sb.Append("</svg>");
-        SvgMarkup = sb.ToString();
-    }
-
-    private string UsOutlinePath()
-    {
-        // Approximate coastline/border ring for contiguous US (clockwise from NW).
-        (decimal lon, decimal lat)[] ring =
-        [
-            (-124.7m, 48.4m), (-123.0m, 46.2m), (-124.2m, 42.0m), (-124.4m, 40.4m), (-122.5m, 37.8m),
-            (-121.9m, 36.3m), (-120.0m, 34.5m), (-117.2m, 32.6m), (-114.7m, 32.7m), (-111.0m, 31.4m),
-            (-108.2m, 31.8m), (-106.4m, 31.8m), (-103.0m, 29.0m), (-100.0m, 28.0m), (-97.2m, 25.9m),
-            (-93.9m, 29.7m), (-89.0m, 30.2m), (-87.5m, 30.3m), (-85.0m, 29.7m), (-82.5m, 27.8m),
-            (-80.4m, 25.2m), (-80.1m, 26.8m), (-81.5m, 30.7m), (-80.8m, 32.0m), (-78.6m, 33.9m),
-            (-76.0m, 36.9m), (-75.5m, 39.2m), (-73.9m, 40.8m), (-71.0m, 41.4m), (-69.8m, 43.7m),
-            (-67.0m, 44.8m), (-66.95m, 44.8m), (-67.8m, 47.1m), (-69.2m, 47.4m), (-71.5m, 45.0m),
-            (-74.5m, 45.0m), (-76.5m, 44.2m), (-79.0m, 43.2m), (-82.5m, 41.7m), (-83.5m, 42.0m),
-            (-84.5m, 45.8m), (-87.5m, 45.0m), (-90.5m, 46.8m), (-92.0m, 46.7m), (-95.0m, 49.0m),
-            (-97.2m, 49.0m), (-104.0m, 49.0m), (-111.0m, 49.0m), (-116.0m, 49.0m), (-122.8m, 49.0m),
-            (-124.7m, 48.4m)
-        ];
-
-        var parts = new List<string>(ring.Length + 1);
-        for (var i = 0; i < ring.Length; i++)
+        catch (JSDisconnectedException)
         {
-            var (x, y) = Project(ring[i].lat, ring[i].lon);
-            parts.Add($"{(i == 0 ? "M" : "L")}{x:0.##},{y:0.##}");
+            // The server-side circuit has already ended.
         }
-        parts.Add("Z");
-        return string.Join(" ", parts);
-    }
-
-    private string StateHintsMarkup()
-    {
-        // Light state markers so spread across the country is readable without a full state boundary dataset.
-        (string code, decimal lat, decimal lon)[] hints =
-        [
-            ("CA", 36.8m, -119.4m), ("WA", 47.4m, -120.5m), ("ID", 44.1m, -114.7m), ("CO", 39.0m, -105.5m),
-            ("TX", 31.5m, -99.5m), ("WI", 44.3m, -89.8m), ("IL", 40.3m, -89.0m), ("NY", 42.9m, -75.5m),
-            ("PA", 40.9m, -77.2m), ("FL", 28.1m, -81.7m), ("GA", 32.7m, -83.5m), ("MI", 43.7m, -84.5m)
-        ];
-
-        var sb = new System.Text.StringBuilder();
-        foreach (var h in hints)
-        {
-            var (x, y) = Project(h.lat, h.lon);
-            sb.Append($"<text x=\"{x:0.##}\" y=\"{y:0.##}\" text-anchor=\"middle\" class=\"dd-map-state-hint\">{h.code}</text>");
-        }
-        return sb.ToString();
-    }
-
-    private (double x, double y) Project(decimal lat, decimal lon)
-    {
-        var clampedLat = Math.Clamp(lat, MinLat, MaxLat);
-        var clampedLon = Math.Clamp(lon, MinLon, MaxLon);
-        var x = Pad + (double)((clampedLon - MinLon) / (MaxLon - MinLon)) * (Width - 2 * Pad);
-        var y = Pad + (1.0 - (double)((clampedLat - MinLat) / (MaxLat - MinLat))) * (Height - 2 * Pad);
-        return (x, y);
-    }
-
-    private static string ShortName(string name)
-    {
-        // Prefer trailing "(ST)" state code when present.
-        var open = name.LastIndexOf('(');
-        var close = name.LastIndexOf(')');
-        if (open >= 0 && close > open && close - open <= 4)
-            return name[(open + 1)..close];
-        return name.Length <= 14 ? name : name[..12] + "…";
     }
 
     public sealed record NetworkPointVm(Guid id, string kind, string name, decimal latitude, decimal longitude);

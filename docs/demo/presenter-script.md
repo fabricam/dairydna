@@ -36,9 +36,10 @@ the in-memory fallback.
    `2025-12-29` window — sub-second on the reference machine (§ performance
    budgets in `hardening-notes.md`).
 3. Click **Load demo summary**. Expect: inventory/demand/fleet counts and the
-   **network map** — a schematic scatter of farms, facilities, and customers
-   (labeled **Synthetic**). This is the map required by FR-005a; call it out
-   explicitly: "this is a schematic layout, not literal GPS routing."
+   **network map** — an interactive Google map of farms, facilities, and
+   customers (labeled **Synthetic**). This is the map required by FR-005a;
+   call out that markers use generated coordinates and recommended lanes are
+   planning flows, not literal GPS routes.
 4. *Talking point*: "Every number on this screen came from a seeded random
    generator — there is no live market data yet at this stage."
 

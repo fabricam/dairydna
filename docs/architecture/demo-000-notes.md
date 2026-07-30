@@ -28,8 +28,8 @@ Manual pass of quickstart scenarios (2026-07-26) against local implementation.
 
 | Visual | Location | Notes |
 |--------|----------|-------|
-| Network map (schematic lat/lon scatter) | Demo home after Load summary | Facilities + customers; Synthetic label |
-| Recommended flow arcs | Recommendations | Overlaid on same schematic map |
+| Network map (Google Maps lat/lon markers) | Demo home after Load summary | Facilities + customers; Synthetic label |
+| Recommended flow arcs | Recommendations | Geodesic planning lanes overlaid on the Google map |
 | Margin/cost grouped bars | Recommendations | Revenue / transport / margin per movement + table alt text |
 
 Restart Aspire after pull so Web picks up UI changes.

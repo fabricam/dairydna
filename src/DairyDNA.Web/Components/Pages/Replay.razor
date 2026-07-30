@@ -160,20 +160,10 @@
                 <div class="ui negative label">Did not meet the regret bar</div>
             }
 
-            @{ var bars = BuildComparisonBars(report); var max = Math.Max(1m, bars.Max(b => Math.Abs(b.Value))); }
-            <svg viewBox="0 0 480 220" role="img" aria-label="Grouped bars comparing total optimizer and baseline contribution margin across the window">
-                <title>Grouped bars comparing total optimizer and baseline contribution margin across the window</title>
-                <line x1="20" y1="160" x2="460" y2="160" stroke="#999" stroke-width="1" />
-                @foreach (var bar in bars)
-                {
-                    <g>
-                        <text x="@bar.X" y="20">@bar.Name</text>
-                        <rect x="@bar.X" y="@BarY(bar.Value, max)" width="90" height="@BarHeight(bar.Value, max)" fill="@bar.Color" />
-                        <text x="@bar.X" y="180">@bar.Value.ToString("0")</text>
-                    </g>
-                }
-            </svg>
-            <p class="dd-visual-alt">@ChartAlt(bars)</p>
+            @{ var bars = BuildComparisonBars(report); }
+            <RegretComparisonChart Bars="bars"
+                                   AriaLabel="Grouped bars comparing total optimizer and baseline contribution margin across the window"
+                                   TextAlternative="@ChartAlt(bars)" />
         </div>
 
         <table class="ui celled compact table">
@@ -390,26 +380,21 @@
 
     private static string ShortId(Guid? id) => id is null ? "—" : id.Value.ToString()[..8];
 
-    private static List<ComparisonBar> BuildComparisonBars(RegretWindowReportDto report)
+    private static List<RegretComparisonChart.ComparisonBarVm> BuildComparisonBars(RegretWindowReportDto report)
     {
         var optimizerTotal = report.days.Sum(d => d.optimizer.objectiveValue);
         var nearestTotal = report.days.Sum(d => d.baselines.FirstOrDefault(b => b.policyName == "NearestCustomerGreedy")?.objectiveValue ?? 0m);
         var highestTotal = report.days.Sum(d => d.baselines.FirstOrDefault(b => b.policyName == "HighestPriceFirst")?.objectiveValue ?? 0m);
         return
         [
-            new ComparisonBar("Optimizer", optimizerTotal, 60, "#2185d0"),
-            new ComparisonBar("Nearest-customer", nearestTotal, 210, "#f2711c"),
-            new ComparisonBar("Highest-price", highestTotal, 360, "#a5673f")
+            new RegretComparisonChart.ComparisonBarVm("Optimizer", optimizerTotal, "#2185d0"),
+            new RegretComparisonChart.ComparisonBarVm("Nearest-customer", nearestTotal, "#f2711c"),
+            new RegretComparisonChart.ComparisonBarVm("Highest-price", highestTotal, "#a5673f")
         ];
     }
 
-    private static decimal BarHeight(decimal value, decimal max) => Math.Min(120m, Math.Abs(value) / max * 120m);
-    private static decimal BarY(decimal value, decimal max) => 160m - BarHeight(value, max);
-
-    private static string ChartAlt(List<ComparisonBar> bars) =>
+    private static string ChartAlt(List<RegretComparisonChart.ComparisonBarVm> bars) =>
         "Total contribution margin over the window: " + string.Join("; ", bars.Select(b => $"{b.Name} {b.Value:0.00}")) + ".";
-
-    private sealed record ComparisonBar(string Name, decimal Value, int X, string Color);
 
     private sealed record GenDto(Guid id, string? profileName, string? planningDate);
     private sealed record GenDetailDto(Guid id, string? profileName, string status, DateOnly startDate, DateOnly endDate, DateOnly planningDate);

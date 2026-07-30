@@ -1,0 +1,40 @@
+@namespace DairyDNA.Web.Components.Visuals
+
+<ChartCanvas Config="@BuildChartConfig()" AriaLabel="@AriaLabel" Height="@Height" />
+<p class="dd-visual-alt">@TextAlternative</p>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ComparisonBarVm> Bars { get; set; } = [];
+    [Parameter] public string AriaLabel { get; set; } = "Total optimizer and baseline contribution margin";
+    [Parameter] public string TextAlternative { get; set; } = string.Empty;
+    [Parameter] public int Height { get; set; } = 260;
+
+    private object BuildChartConfig() => new
+    {
+        type = "bar",
+        data = new
+        {
+            labels = Bars.Select(b => b.Name).ToArray(),
+            datasets = new[]
+            {
+                new
+                {
+                    label = "Contribution margin",
+                    data = Bars.Select(b => b.Value).ToArray(),
+                    backgroundColor = Bars.Select(b => b.Color).ToArray()
+                }
+            }
+        },
+        options = new
+        {
+            plugins = new { legend = new { display = false } },
+            scales = new
+            {
+                x = new { title = new { display = true, text = "Plan" } },
+                y = new { title = new { display = true, text = "Total contribution margin" } }
+            }
+        }
+    };
+
+    public sealed record ComparisonBarVm(string Name, decimal Value, string Color);
+}

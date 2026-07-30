@@ -51,16 +51,10 @@
             {
                 <div class="ui negative label">Not recommended</div>
             }
-            <svg viewBox="0 0 480 210" role="img" aria-label="Grouped bars comparing objective and unserved demand">
-                <text x="15" y="20">Objective</text>
-                <rect x="120" y="@BarY(comparison.Base.objectiveValue)" width="70" height="@BarHeight(comparison.Base.objectiveValue)" fill="#2185d0" />
-                <rect x="200" y="@BarY(comparison.Scenario.objectiveValue)" width="70" height="@BarHeight(comparison.Scenario.objectiveValue)" fill="#f2711c" />
-                <text x="15" y="150">Unserved rows</text>
-                <rect x="120" y="@CountBarY(comparison.Base.unservedCount)" width="70" height="@CountBarHeight(comparison.Base.unservedCount)" fill="#2185d0" />
-                <rect x="200" y="@CountBarY(comparison.Scenario.unservedCount)" width="70" height="@CountBarHeight(comparison.Scenario.unservedCount)" fill="#f2711c" />
-                <text x="120" y="205">Base</text><text x="200" y="205">Scenario</text>
-            </svg>
-            <p class="dd-visual-alt">Grouped bars compare objective and unserved demand rows. Blue is base; orange is scenario.</p>
+            <ScenarioComparisonChart BaseObjective="@comparison.Base.objectiveValue"
+                                     ScenarioObjective="@comparison.Scenario.objectiveValue"
+                                     BaseUnservedCount="@comparison.Base.unservedCount"
+                                     ScenarioUnservedCount="@comparison.Scenario.unservedCount" />
         </div>
         <p>@comparison.MovementDiffs.Count movement lanes differ. Detailed flows remain available in optimization recommendations.</p>
     }
@@ -104,11 +98,6 @@
         if (scenarioRun is null || !response.IsSuccessStatusCode) { Error = "Scenario optimization failed to start."; return; }
         Comparison = await client.GetFromJsonAsync<ScenarioComparisonDto>($"api/scenarios/compare?baseRunId={baseRunId}&scenarioRunId={scenarioRun.id}");
     }
-
-    private static decimal BarHeight(decimal value) => Math.Min(100m, Math.Abs(value) / 1000m);
-    private static decimal BarY(decimal value) => 125m - BarHeight(value);
-    private static decimal CountBarHeight(int value) => Math.Min(80m, value * 12m);
-    private static decimal CountBarY(int value) => 180m - CountBarHeight(value);
 
     private sealed record ScenarioDefinitionDto(Guid id, string name, int version, string? description, string overridesJson);
     private sealed record OptimizationRunDto(Guid id);

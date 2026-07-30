@@ -1,0 +1,47 @@
+@namespace DairyDNA.Web.Components.Visuals
+
+<ChartCanvas Config="@BuildChartConfig()"
+             AriaLabel="Bar chart comparing model WAPE to baseline WAPE"
+             Height="240" />
+<p class="dd-visual-alt">
+    Model WAPE @FormatPct(ModelWape) versus baseline WAPE @FormatPct(BaselineWape).
+    Lower is better; improvement versus baseline is @ImprovementPct.ToString("0.0")%.
+</p>
+
+@code {
+    [Parameter] public decimal ModelWape { get; set; }
+    [Parameter] public decimal BaselineWape { get; set; }
+    [Parameter] public decimal ImprovementPct { get; set; }
+
+    private object BuildChartConfig() => new
+    {
+        type = "bar",
+        data = new
+        {
+            labels = new[] { "Model", "Baseline" },
+            datasets = new[]
+            {
+                new
+                {
+                    label = "WAPE (%)",
+                    data = new[] { ModelWape * 100m, BaselineWape * 100m },
+                    backgroundColor = new[] { "#2185d0", "#a5673f" }
+                }
+            }
+        },
+        options = new
+        {
+            plugins = new { legend = new { display = false } },
+            scales = new
+            {
+                y = new
+                {
+                    beginAtZero = true,
+                    title = new { display = true, text = "WAPE (%)" }
+                }
+            }
+        }
+    };
+
+    private static string FormatPct(decimal wape) => (wape * 100m).ToString("0.0") + "%";
+}

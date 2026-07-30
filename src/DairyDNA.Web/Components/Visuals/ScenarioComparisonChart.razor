@@ -1,0 +1,60 @@
+@namespace DairyDNA.Web.Components.Visuals
+
+<ChartCanvas Config="@BuildChartConfig()"
+             AriaLabel="Grouped bars comparing objective and unserved demand"
+             Height="280" />
+<p class="dd-visual-alt">
+    Base objective @BaseObjective.ToString("0.00") with @BaseUnservedCount unserved rows;
+    scenario objective @ScenarioObjective.ToString("0.00") with @ScenarioUnservedCount unserved rows.
+</p>
+
+@code {
+    [Parameter] public decimal BaseObjective { get; set; }
+    [Parameter] public decimal ScenarioObjective { get; set; }
+    [Parameter] public int BaseUnservedCount { get; set; }
+    [Parameter] public int ScenarioUnservedCount { get; set; }
+
+    private object BuildChartConfig() => new
+    {
+        type = "bar",
+        data = new
+        {
+            labels = new[] { "Base", "Scenario" },
+            datasets = new object[]
+            {
+                new
+                {
+                    label = "Objective",
+                    data = new[] { BaseObjective, ScenarioObjective },
+                    backgroundColor = new[] { "#2185d0", "#f2711c" },
+                    yAxisID = "y"
+                },
+                new
+                {
+                    label = "Unserved rows",
+                    data = new[] { BaseUnservedCount, ScenarioUnservedCount },
+                    backgroundColor = new[] { "rgba(33, 133, 208, 0.45)", "rgba(242, 113, 28, 0.45)" },
+                    yAxisID = "y1"
+                }
+            }
+        },
+        options = new
+        {
+            scales = new
+            {
+                x = new { title = new { display = true, text = "Run" } },
+                y = new
+                {
+                    title = new { display = true, text = "Objective" }
+                },
+                y1 = new
+                {
+                    beginAtZero = true,
+                    position = "right",
+                    title = new { display = true, text = "Unserved rows" },
+                    grid = new { drawOnChartArea = false }
+                }
+            }
+        }
+    };
+}

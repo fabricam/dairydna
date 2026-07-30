@@ -1,0 +1,42 @@
+@namespace DairyDNA.Web.Components.Visuals
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<div class="dd-chart-container" style="height:@($"{Height}px")">
+    <canvas id="@_canvasId" role="img" aria-label="@AriaLabel">
+        @AriaLabel
+    </canvas>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public object Config { get; set; } = default!;
+    [Parameter] public string AriaLabel { get; set; } = "Data chart";
+    [Parameter] public int Height { get; set; } = 280;
+
+    private readonly string _canvasId = $"chart-{Guid.NewGuid():N}";
+    private int _version;
+    private int _renderedVersion = -1;
+
+    protected override void OnParametersSet() => _version++;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_renderedVersion == _version)
+            return;
+
+        _renderedVersion = _version;
+        await JS.InvokeVoidAsync("dairyDnaCharts.render", _canvasId, Config);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("dairyDnaCharts.destroy", _canvasId);
+        }
+        catch (JSDisconnectedException)
+        {
+            // The server-side circuit has already ended.
+        }
+    }
+}
